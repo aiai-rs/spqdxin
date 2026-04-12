@@ -29,6 +29,9 @@
             color: #334155;
             -webkit-tap-highlight-color: transparent;
         }
+          [v-cloak] > *:not(#app-loading) {
+            display: none !important;
+        }
 
         /* ── App loading ── */
         #app-loading {
@@ -318,15 +321,15 @@
                 display: none !important;
             }
 
-            body:has([v-if="view === 'hire_chat'"]), body:has(.chat-window) {
+            body:has(#hire-chat-container), body:has(.chat-window) {
                 overflow: hidden !important;
                 position: fixed;
                 width: 100%;
                 height: 100%;
             }
 
-            body:has([v-if="view === 'hire_chat'"]) footer,
-            body:has([v-if="view === 'hire_chat'"]) nav,
+            body:has(#hire-chat-container) footer,
+            body:has(#hire-chat-container) nav,
             body:has(.chat-window) footer,
             body:has(.chat-window) nav {
                 display: none !important;
@@ -347,7 +350,7 @@
                 z-index: 99999 !important;
             }
 
-            div[v-if="view === 'hire_chat'"] {
+            #hire-chat-container {
                 position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
@@ -361,7 +364,7 @@
                 background: #f8fafc;
             }
 
-            div[v-if="view === 'hire_chat'"] > div:first-child,
+            #hire-chat-container > div:first-child,
             .chat-window > div:first-child {
                 padding-top: max(16px, env(safe-area-inset-top)) !important;
             }
@@ -373,14 +376,14 @@
                 padding-bottom: 10px;
             }
 
-            div[v-if="view === 'hire_chat'"] > div:last-child,
+            #hire-chat-container > div:last-child,
             .chat-window > div:last-child {
                 padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
                 background: white;
             }
 
-            body:has(input:focus) div[v-if="view === 'hire_chat'"] > div:last-child,
-            body:has(textarea:focus) div[v-if="view === 'hire_chat'"] > div:last-child,
+            body:has(input:focus) #hire-chat-container > div:last-child,
+            body:has(textarea:focus) #hire-chat-container > div:last-child,
             body:has(input:focus) .chat-window > div:last-child,
             body:has(textarea:focus) .chat-window > div:last-child {
                 padding-bottom: 12px !important;
@@ -710,7 +713,7 @@
         </div>
 
         <!-- ── HR Chat ── -->
-        <div v-if="view === 'hire_chat'" class="animate-fade-in max-w-3xl mx-auto h-[calc(100vh-140px)] flex flex-col bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-6">
+        <div id="hire-chat-container" v-if="view === 'hire_chat'" class="animate-fade-in max-w-3xl mx-auto h-[calc(100vh-140px)] flex flex-col bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-6">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <div class="flex items-center gap-3">
                     <button @click="setView('hiring')" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-500 transition shadow-sm"><i class="ri-arrow-left-line"></i></button>
@@ -1660,6 +1663,13 @@
     } else {
         API_BASE = "https://api.xaw888.com";
     }
+    const safeJSONParse = (data, defaultVal) => {
+        try {
+            return data ? JSON.parse(data) : defaultVal;
+        } catch (e) {
+            return defaultVal;
+        }
+    };
 
     // 全局拦截器处理 401 Token 过期
     axios.interceptors.response.use(response => response, error => {
@@ -1694,7 +1704,7 @@
 
                 view: 'home',
                 profileTab: 'orders',
-                user: JSON.parse(localStorage.getItem('nexus_user') || '{}'),
+                user: safeJSONParse(localStorage.getItem('nexus_user'), {}),
                 products: [],
                 categories: [],
                 hiringList: [],
@@ -1764,11 +1774,11 @@
                 balanceLogModal: { open: false, list: [], loading: false },
 
                 // Cart
-                cartItems: JSON.parse(localStorage.getItem('nexus_cart') || '[]'),
+                cartItems: safeJSONParse(localStorage.getItem('nexus_cart'), []),
 
                 // Order Timers
                 orderTimers: {},
-                notifiedQRCodes: JSON.parse(sessionStorage.getItem('notified_qrs') || '[]'),
+                notifiedQRCodes: safeJSONParse(sessionStorage.getItem('notified_qrs'), []),
                 chatInitialized: false,
                 socket: null,
             };
