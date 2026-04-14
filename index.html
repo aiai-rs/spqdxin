@@ -410,7 +410,8 @@
     </div>
 
     <!-- ── Navigation ── -->
-    <nav class="fixed top-0 w-full z-50 bg-white/95 border-b border-slate-200 shadow-sm pt-[env(safe-area-inset-top)]">
+    <nav class="fixed top-0 w-full z-50 bg-white/95 border-b border-slate-200 shadow-sm" style="padding-top: env(safe-area-inset-top);">
+        <div class="h-[env(safe-area-inset-top)] w-full bg-white"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 gap-4">
 
@@ -2046,33 +2047,112 @@
             },
 
             // ── Socket ──
-            initSocket() {
-                if (this.socket) this.socket.disconnect();
-                this.socket = io(API_BASE, { transports: ['websocket'], reconnection: true });
+           initSocket() {
+                if (this.socket) this.socket.disconnect();
+                this.socket = io(API_BASE, { transports: ['websocket'], reconnection: true });
 
-                this.socket.on('connect', () => {
-                    const sid_cs = this.user.id ? `user_${this.user.id}`    : this.chatSessionId;
-                    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-                    this.socket.emit('join_room', sid_cs);
-                    this.socket.emit('join_room', sid_hr);
-                    this.pollChat();
+                this.socket.on('connect', () => {
+                    const sid_cs = this.user.id ? `user_${this.user.id}`    : this.chatSessionId;
+                    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+                    this.socket.emit('join_room', sid_cs);
+                    this.socket.emit('join_room', sid_hr);
+                    this.pollChat();
+                });
+
+                this.socket.on('product_added', (newProduct) => {
+                    this.products.unshift(newProduct);
+                    // 只要有新商品或分类变动，直接请求一次最新的排序分类列表，确保权重同步
+                    axios.get(`${API_BASE}/api/public/data`).then(res => {
+                        if (res.data.success) {
+                            this.categories = res.data.categories;
+                        }
+                    });
+                });
+                // 新增监听：后台分类排序保存时触发
+                this.socket.on('global_update', () => {
+                    axios.get(`${API_BASE}/api/public/data`).then(res => {
+                        if (res.data.success) {
+                            this.categories = res.data.categories;
+                            this.settings.rate = res.data.rate;
+                            this.settings.feeRate = res.data.feeRate;
+                        }
+                    });
                 });
 
-                this.socket.on('global_update', (data) => {
-                    this.products              = data.products || [];
-                    this.categories            = data.categories || [];
-                    this.settings.rate         = data.rate;
-                    this.settings.feeRate      = data.feeRate;
-                    this.settings.announcement = data.announcement;
-                    if (data.hiring)                          this.hiringList         = data.hiring;
-                    if (data.showPopup !== undefined)         this.settings.showPopup = data.showPopup;
+                this.socket.on('product_updated', (updatedProduct) => {
+                    const index = this.products.findIndex(p => p.id == updatedProduct.id);
+                    if (index !== -1) {
+                        this.products[index] = { ...this.products[index], ...updatedProduct };
+                    }
+                    this.categories = [...new Set(this.products.map(p => p.category).filter(Boolean))];
+                    if (this.productDetailModal.open && this.productDetailModal.prod.id == updatedProduct.id) {
+                        this.currentImgIndex = 0;
+                    }
                 });
 
-                this.socket.on('order_update', () => {
+                this.socket.on('product_patched', (patchData) => {
+                    const index = this.products.findIndex(p => p.id == patchData.id);
+                    if (index !== -1) {
+                        this.products[index] = { ...this.products[index], ...patchData };
+                        this.products = [...this.products];
+                    }
+                });
+
+                this.socket.on('product_deleted', (productId) => {
+                    this.products = this.products.filter(p => p.id != productId);
+                    this.categories = [...new Set(this.products.map(p => p.category).filter(Boolean))];
+                });
+
+                this.socket.on('products_hot_changed', (data) => {
+                    const strIds = data.ids.map(String);
+                    this.products.forEach(p => {
+                        if (strIds.includes(String(p.id))) {
+                            p.is_hot = data.is_hot;
+                            p.hot_time = data.is_hot ? new Date().toISOString() : null;
+                        }
+                    });
+                });
+
+                this.socket.on('setting_updated', (data) => {
+                    const { key, value } = data;
+                    if (key === 'rate') this.settings.rate = value;
+                    if (key === 'feeRate') this.settings.feeRate = value;
+                    if (key === 'wallet') this.settings.wallet = value;
+                    if (key === 'announcement') this.settings.announcement = value;
+                    if (key === 'showPopup' || key === 'popup') this.settings.showPopup = value;
+                });
+
+                this.socket.on('hiring_updated', (newList) => {
+                    this.hiringList = newList;
+                });
+
+                this.socket.on('order_update', (data) => {
                     if (this.user.id) {
-                        this.loadOrders();
-                        this.loadUserBalance();
-                        if (this.inviteModal.open) this.openInviteModal();
+                        if (data && data.order) {
+                            const idx = this.myOrders.findIndex(o => o.order_id === data.order.order_id);
+                            if (idx !== -1) {
+                                this.myOrders[idx] = data.order;
+                            } else {
+                                this.myOrders.unshift(data.order);
+                            }
+                            if (data.balance !== undefined) {
+                                this.user.balance = parseFloat(data.balance);
+                                localStorage.setItem('nexus_user', JSON.stringify(this.user));
+                            }
+                            // 关键新增：如果正在看邀请页面，必须重新拉取团队列表
+                            if (this.inviteModal.open) {
+                                axios.get(`${API_BASE}/api/user/team?userId=${this.user.id}`).then(res => {
+                                    if (res.data.success) {
+                                        this.inviteModal.list = res.data.list;
+                                        this.inviteModal.totalEarned = res.data.total;
+                                    }
+                                });
+                            }
+                        } else {
+                            this.loadOrders();
+                            this.loadUserBalance();
+                            if (this.inviteModal.open) this.openInviteModal();
+                        }
                     }
                 });
 
@@ -2116,7 +2196,8 @@
                     const targetMsg = this.chatMessages.find(m => m.id == data.messageId);
                     if (targetMsg) {
                         targetMsg.content = '客服撤回了一条消息';
-                        targetMsg.msg_type = 'system';
+                        targetMsg.msg_type = 'system'; // 强制改为 system 类型，跳过图片渲染逻辑
+                        this.$forceUpdate(); // 确保 UI 即时刷新
                     }
                     const csTarget = this.csMessages.find(m => m.id == data.messageId);
                     if (csTarget) { csTarget.content = '客服撤回了一条消息'; csTarget.msg_type = 'system'; }
