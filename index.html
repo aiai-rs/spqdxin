@@ -746,7 +746,7 @@
                             <div class="px-3 py-2 text-[13px] leading-relaxed shadow-sm transition-all"
                                  :class="msg.sender === 'user' ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl rounded-br-md' : 'bg-gradient-to-br from-slate-50 to-slate-100 text-slate-700 border border-slate-200/80 rounded-2xl rounded-bl-md'">
                                 <template v-if="msg.msg_type === 'image'">
-                                    <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer hover:opacity-90 transition object-cover" @click="openInNewTab(msg.content)" style="max-height: 180px;">
+                                    <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer hover:opacity-90 transition object-cover" @click="openImagePreview(msg.content)" style="max-height: 180px;">
                                 </template>
                                 <template v-else>{{ msg.content }}</template>
                             </div>
@@ -1091,7 +1091,7 @@
                             <div class="px-3 py-2 text-[13px] leading-relaxed shadow-sm transition-all"
                                  :class="msg.sender === 'user' ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl rounded-br-md' : 'bg-gradient-to-br from-slate-50 to-slate-100 text-slate-700 border border-slate-200/80 rounded-2xl rounded-bl-md'">
                                 <template v-if="msg.msg_type === 'image'">
-                                    <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer hover:opacity-90 transition object-cover" @click="openInNewTab(msg.content)" style="max-height: 140px;">
+                                    <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer hover:opacity-90 transition object-cover" @click="openImagePreview(msg.content)" style="max-height: 140px;">
                                 </template>
                                 <template v-else>{{ msg.content }}</template>
                             </div>
@@ -1653,6 +1653,14 @@
             </div>
         </div>
     </transition>
+<transition name="modal">
+        <div v-if="imagePreviewModal.open" class="fixed inset-0 flex items-center justify-center bg-black/90 p-2 sm:p-4 backdrop-blur-sm" style="z-index: 999999 !important;" @click.self="imagePreviewModal.open = false">
+            <button @click="imagePreviewModal.open = false" class="absolute top-4 right-4 text-white/70 hover:text-white bg-black/40 rounded-full w-10 h-10 flex items-center justify-center transition z-10 shadow-lg">
+                <i class="ri-close-line text-2xl"></i>
+            </button>
+            <img :src="imagePreviewModal.url" class="max-w-full max-h-full object-contain rounded-lg select-none cursor-zoom-out shadow-2xl" @click="imagePreviewModal.open = false">
+        </div>
+    </transition>
 
 </div><!-- /#app -->
 
@@ -1773,6 +1781,9 @@
 
                 // Balance Logs
                 balanceLogModal: { open: false, list: [], loading: false },
+
+                // Image Preview
+                imagePreviewModal: { open: false, url: '' },
 
                 // Cart
                 cartItems: safeJSONParse(localStorage.getItem('nexus_cart'), []),
@@ -1895,7 +1906,12 @@
 
 });
 
-            window.addEventListener('popstate', (e) => {
+           window.addEventListener('popstate', (e) => {
+                if (this.imagePreviewModal.open) {
+                    this.imagePreviewModal.open = false;
+                    history.pushState(null, null, null);
+                    return;
+                }
                 if (this.view === 'hire_chat') { this.chatMessages = []; this.view = 'hiring'; return; }
                 if (this.view === 'cart')      { this.view = 'home';   return; }
                 if (this.chatOpen || this.productDetailModal.open || this.buyModal.open ||
@@ -1925,6 +1941,11 @@
             // window is not in Vue's template scope; using a method fixes runtime errors.
             openInNewTab(url) {
                 window.open(url, '_blank');
+            },
+            openImagePreview(url) {
+                history.pushState({ modal: 'image_preview' }, null, '');
+                this.imagePreviewModal.url = url;
+                this.imagePreviewModal.open = true;
             },
          async initPushSubscription() {
                 if (!this.user.id || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
