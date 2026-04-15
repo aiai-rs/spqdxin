@@ -518,7 +518,7 @@
         <div v-if="view === 'home'" class="animate-fade-in">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
                 <h2 class="text-2xl font-bold text-slate-800 tracking-tight self-start md:self-center">
-                    {{ filterCat === 'all' ? '精选商品' : filterCat }}
+                    {{ filterCat === 'all' ? '全部商品' : filterCat }}
                 </h2>
                 <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
                     <div class="relative group">
@@ -541,7 +541,7 @@
             </div>
 
             <!-- Loading Skeleton -->
-            <div v-if="loading" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div v-if="loading && products.length === 0" class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div v-for="i in 6" :key="i" class="bg-white rounded-2xl p-4 shadow-sm h-80 animate-pulse">
                     <div class="bg-slate-200 h-40 rounded-xl mb-4"></div>
                     <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
@@ -1880,13 +1880,20 @@
             setTimeout(() => { this.initPushSubscription(); }, 2000);
 
             document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') {
-                    this.pollChat();
-                    if (this.user.id) {
-                        this.pollUpdates();
-                    }
-                }
-            });
+
+    if (document.visibilityState === 'visible') {
+
+        this.pollChat();
+
+        if (this.user && this.user.id) {
+
+            this.checkPendingQROrders();
+
+        }
+
+    }
+
+});
 
             window.addEventListener('popstate', (e) => {
                 if (this.view === 'hire_chat') { this.chatMessages = []; this.view = 'hiring'; return; }
@@ -2057,51 +2064,50 @@
                     this.socket.emit('join_room', sid_cs);
                     this.socket.emit('join_room', sid_hr);
                     this.pollChat();
+                    this.initData();
                 });
 
-                this.socket.on('product_added', (newProduct) => {
-                    this.products.unshift(newProduct);
-                    // 只要有新商品或分类变动，直接请求一次最新的排序分类列表，确保权重同步
-                    axios.get(`${API_BASE}/api/public/data`).then(res => {
-                        if (res.data.success) {
-                            this.categories = res.data.categories;
-                        }
-                    });
-                });
-                // 新增监听：后台分类排序保存时触发
-                this.socket.on('global_update', () => {
-                    axios.get(`${API_BASE}/api/public/data`).then(res => {
-                        if (res.data.success) {
-                            this.categories = res.data.categories;
-                            this.settings.rate = res.data.rate;
-                            this.settings.feeRate = res.data.feeRate;
-                        }
-                    });
-                });
+               this.socket.on('product_added', (newProduct) => {
+                    this.products.unshift(newProduct);
+                    if (newProduct.category && !this.categories.includes(newProduct.category)) {
+                        this.categories.push(newProduct.category);
+                    }
+                });
 
-                this.socket.on('product_updated', (updatedProduct) => {
-                    const index = this.products.findIndex(p => p.id == updatedProduct.id);
-                    if (index !== -1) {
-                        this.products[index] = { ...this.products[index], ...updatedProduct };
-                    }
-                    this.categories = [...new Set(this.products.map(p => p.category).filter(Boolean))];
-                    if (this.productDetailModal.open && this.productDetailModal.prod.id == updatedProduct.id) {
-                        this.currentImgIndex = 0;
-                    }
-                });
+                // 新增监听：后台分类排序保存时触发
+                this.socket.on('global_update', (data) => {
+    if (data) {
+        if (data.categories) this.categories = data.categories;
+        if (data.rate) this.settings.rate = data.rate;
+        if (data.feeRate !== undefined) this.settings.feeRate = data.feeRate;
+        if (data.announcement) this.settings.announcement = data.announcement;
+    }
+});
 
-                this.socket.on('product_patched', (patchData) => {
-                    const index = this.products.findIndex(p => p.id == patchData.id);
-                    if (index !== -1) {
-                        this.products[index] = { ...this.products[index], ...patchData };
-                        this.products = [...this.products];
-                    }
-                });
+               this.socket.on('product_updated', (updatedProduct) => {
+                    const index = this.products.findIndex(p => p.id == updatedProduct.id);
+                    if (index !== -1) {
+                        this.products[index] = { ...this.products[index], ...updatedProduct };
+                    }
+                    if (updatedProduct.category && !this.categories.includes(updatedProduct.category)) {
+                        this.categories.push(updatedProduct.category);
+                    }
+                    if (this.productDetailModal.open && this.productDetailModal.prod.id == updatedProduct.id) {
+                        this.currentImgIndex = 0;
+                    }
+                });
 
-                this.socket.on('product_deleted', (productId) => {
-                    this.products = this.products.filter(p => p.id != productId);
-                    this.categories = [...new Set(this.products.map(p => p.category).filter(Boolean))];
-                });
+                this.socket.on('product_patched', (patchData) => {
+                    const index = this.products.findIndex(p => p.id == patchData.id);
+                    if (index !== -1) {
+                        this.products[index] = { ...this.products[index], ...patchData };
+                        this.products = [...this.products];
+                    }
+                });
+
+                this.socket.on('product_deleted', (productId) => {
+                    this.products = this.products.filter(p => p.id != productId);
+                });
 
                 this.socket.on('products_hot_changed', (data) => {
                     const strIds = data.ids.map(String);
@@ -2127,34 +2133,62 @@
                 });
 
                 this.socket.on('order_update', (data) => {
-                    if (this.user.id) {
-                        if (data && data.order) {
-                            const idx = this.myOrders.findIndex(o => o.order_id === data.order.order_id);
-                            if (idx !== -1) {
-                                this.myOrders[idx] = data.order;
-                            } else {
-                                this.myOrders.unshift(data.order);
-                            }
-                            if (data.balance !== undefined) {
-                                this.user.balance = parseFloat(data.balance);
-                                localStorage.setItem('nexus_user', JSON.stringify(this.user));
-                            }
-                            // 关键新增：如果正在看邀请页面，必须重新拉取团队列表
-                            if (this.inviteModal.open) {
-                                axios.get(`${API_BASE}/api/user/team?userId=${this.user.id}`).then(res => {
-                                    if (res.data.success) {
-                                        this.inviteModal.list = res.data.list;
-                                        this.inviteModal.totalEarned = res.data.total;
-                                    }
-                                });
-                            }
-                        } else {
-                            this.loadOrders();
-                            this.loadUserBalance();
-                            if (this.inviteModal.open) this.openInviteModal();
-                        }
-                    }
-                });
+    if (!this.user.id) return;
+    
+    // 处理订单数据更新
+    if (data.order) {
+        // 查找旧订单（用于状态变化检测）
+        const oldOrder = this.myOrders.find(o => o.order_id === data.order.order_id);
+        const wasNotPaid = oldOrder && oldOrder.status !== '已支付';
+        
+        // 更新订单数组
+        const idx = this.myOrders.findIndex(o => o.order_id === data.order.order_id);
+        if (idx !== -1) {
+            Object.assign(this.myOrders[idx], data.order);
+        } else {
+            this.myOrders.unshift(data.order);
+        }
+        
+        // 支付成功弹窗（状态从非“已支付”变为“已支付”）
+        if (data.order.status === '已支付' && wasNotPaid) {
+            this.messageSound.play().catch(() => {});
+            Swal.fire({
+                icon: 'success',
+                title: '支付成功',
+                text: '您的订单已到账！',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            // 支付成功后引导安装 APP（仅非 PWA 模式）
+            if (!window.matchMedia('(display-mode: standalone)').matches && !window.navigator.standalone) {
+                setTimeout(() => { this.showAddToHomeGuide('purchase'); }, 180000);
+            }
+        }
+        
+        // 二维码自动弹窗（待支付且有二维码且未通知过且未过期）
+        if (data.order.status === '待支付' && data.order.qrcode_url &&
+            !this.notifiedQRCodes.includes(data.order.order_id) && !this.isOrderExpired(data.order)) {
+            this.notifiedQRCodes.push(data.order.order_id);
+            sessionStorage.setItem('notified_qrs', JSON.stringify(this.notifiedQRCodes));
+            this.showPaymentInfo(data.order);
+            this.messageSound.play().catch(() => {});
+        }
+    }
+    
+    // 更新余额
+    if (data.balance !== undefined) {
+        this.user.balance = parseFloat(data.balance);
+        localStorage.setItem('nexus_user', JSON.stringify(this.user));
+    }
+    
+    // 邀请团队更新（原有逻辑保留）
+    if (data.team_update && this.inviteModal.open) {
+        if (data.new_member) {
+            this.inviteModal.list.unshift(data.new_member);
+            this.inviteModal.totalEarned = parseFloat(data.total_earned || this.inviteModal.totalEarned);
+        }
+    }
+});
 
                 this.socket.on('force_logout', () => {
                     this.logout();
@@ -2321,6 +2355,35 @@
                     this.checkQRCodes();
                 } catch (e) { console.error("加载订单失败", e); }
             },
+          async checkPendingQROrders() {
+
+                try {
+
+                    const res = await axios.get(`${API_BASE}/api/order?userId=${this.user.id}&status=pending_qr`);
+
+                    const pendingOrders = res.data || [];
+
+                    pendingOrders.forEach(newOrder => {
+
+                        const idx = this.myOrders.findIndex(o => o.order_id === newOrder.order_id);
+
+                        if (idx !== -1) {
+
+                            Object.assign(this.myOrders[idx], newOrder);
+
+                        } else {
+
+                            this.myOrders.unshift(newOrder);
+
+                        }
+
+                    });
+
+                    this.checkQRCodes();
+
+                } catch (e) { console.error("检查二维码失败", e); }
+
+            },
 
             checkQRCodes() {
                 this.myOrders.forEach(order => {
@@ -3331,14 +3394,26 @@
             },
 
             // ── Order Timers ──
-            startOrderTimers() {
-                Object.values(this.orderTimers).forEach(timer => clearInterval(timer));
-                this.orderTimers = {};
-                this.myOrders.filter(order => order.status === '待支付' && order.expires_at)
-                    .forEach(order => {
-                        this.orderTimers[order.order_id] = setInterval(() => { this.updateOrderTimer(order.order_id); }, 1000);
-                    });
-            },
+           startOrderTimers() {
+    if (this.mainTimer) clearInterval(this.mainTimer);
+    this.mainTimer = setInterval(() => {
+        const now = new Date().getTime();
+        this.myOrders.forEach(order => {
+            if (order.status === '待支付' && order.expires_at) {
+                const diff = new Date(order.expires_at).getTime() - now;
+                if (diff <= 0) {
+                    order.countdown_text = "已过期";
+                    order.is_expired = true;
+                } else {
+                    const m = Math.floor(diff / 1000 / 60);
+                    const s = Math.floor((diff / 1000) % 60);
+                    order.countdown_text = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                    order.is_expired = false;
+                }
+            }
+        });
+    }, 1000);
+},
 
             updateOrderTimer(orderId) {
                 const order = this.myOrders.find(o => o.order_id === orderId);
@@ -3415,105 +3490,12 @@
                 finally { this.recordModal.loading = false; }
             },
 
-            openWalletAction(type) {
-                if (type === 'recharge') this.openRechargeModal();
-                else this.openWithdrawModal();
-            },
+           openWalletAction(type) {
+                if (type === 'recharge') this.openRechargeModal();
+                else this.openWithdrawModal();
+            },
 
-            async pollUpdates() {
-                try {
-                    const publicRes = await axios.get(`${API_BASE}/api/public/data`);
-                    const d = publicRes.data;
-                    this.products              = d.products || [];
-                    this.settings.rate         = d.rate;
-                    this.settings.feeRate      = d.feeRate;
-                    this.settings.announcement = d.announcement;
-                } catch (e) {}
-                if (!this.user.id) return;
-                try {
-                    const balanceRes = await axios.get(`${API_BASE}/api/user/balance?userId=${this.user.id}`);
-                    if (balanceRes.data.success) {
-                        this.user.balance = balanceRes.data.balance;
-                        localStorage.setItem('nexus_user', JSON.stringify(this.user));
-                    }
-                    const ordersRes  = await axios.get(`${API_BASE}/api/order?userId=${this.user.id}`);
-                    const newOrders  = ordersRes.data || [];
-
-                    if (this.myOrders.length > 0) {
-                        for (const newOrder of newOrders) {
-                            const oldOrder = this.myOrders.find(o => o.order_id === newOrder.order_id);
-                            if (oldOrder && oldOrder.status !== '已支付' && newOrder.status === '已支付') {
-                                this.messageSound.play().catch(() => {});
-                                Swal.fire({ icon: 'success', title: '支付成功', text: '您的订单已到账！', timer: 2000, showConfirmButton: false });
-                                if (!window.matchMedia('(display-mode: standalone)').matches && !window.navigator.standalone) {
-                                    setTimeout(() => { this.showAddToHomeGuide('purchase'); }, 180000);
-                                }
-                                break;
-                            }
-                        }
-                    }
-
-                    this.myOrders = newOrders;
-                    this.startOrderTimers();
-
-                    for (const order of newOrders) {
-                        if (order.status === '待支付' && order.qrcode_url &&
-                            !this.notifiedQRCodes.includes(order.order_id) && !this.isOrderExpired(order)) {
-                            this.notifiedQRCodes.push(order.order_id);
-                            sessionStorage.setItem('notified_qrs', JSON.stringify(this.notifiedQRCodes));
-
-                            let payMethodText = '请使用扫码支付';
-                            if (order.payment_method === 'WeChat') payMethodText = '请使用微信扫码支付';
-                            else if (order.payment_method === 'Alipay') payMethodText = '请使用支付宝扫码支付';
-                            let timerInterval;
-                            Swal.fire({
-                                title: '客服已上传收款码',
-                                html: `
-                                    <div class="text-center">
-                                        <p class="mb-2">订单号: <b>${order.order_id}</b></p>
-                                        <p class="text-red-500 font-bold mb-4">请在 <b id="qr-timer">--:--</b> 内完成支付</p>
-                                        <img src="${order.qrcode_url}" style="max-width:200px; margin:0 auto; border:1px solid #eee; border-radius:8px; padding:5px;">
-                                        <p class="mt-3 text-sm text-slate-500">${payMethodText}</p>
-                                        <p class="mt-1 text-lg font-bold text-brand-600">¥${order.cny_amount}</p>
-                                    </div>
-                                `,
-                                icon: 'info',
-                                confirmButtonText: '我已支付，去上传凭证',
-                                showCancelButton: true,
-                                cancelButtonText: '稍后支付',
-                                showDenyButton: true,
-                                denyButtonText: '二维码无法识别',
-                                confirmButtonColor: '#3b82f6',
-                                allowOutsideClick: false,
-                                didOpen: () => {
-                                    const timerDisplay = document.getElementById('qr-timer');
-                                    const expires = new Date(order.expires_at).getTime();
-                                    timerInterval = setInterval(() => {
-                                        const now      = new Date().getTime();
-                                        const distance = expires - now;
-                                        if (distance < 0) { clearInterval(timerInterval); if (timerDisplay) timerDisplay.textContent = "已过期"; Swal.close(); }
-                                        else {
-                                            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                                            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                                            if (timerDisplay) timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                                        }
-                                    }, 1000);
-                                },
-                                willClose: () => { clearInterval(timerInterval); }
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    this.paymentProofModal.orderId  = order.order_id;
-                                    this.paymentProofModal.proofUrl = '';
-                                    this.paymentProofModal.file     = null;
-                                    this.paymentProofModal.open     = true;
-                                } else if (result.isDenied) {
-                                    this.reportQrIssue(order.order_id);
-                                }
-                            });
-                        }
-                    }
-                } catch (e) {}
-            },
+ 
         }
     });
 
