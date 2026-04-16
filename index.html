@@ -2,9 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小暗网 | 匿名交易平台</title>
-    <title>小暗网 | 匿名交易平台</title>
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexus System</title>
     <script src="./assets/js/vue.global.prod.js"></script>
     
     <link rel="stylesheet" href="./output.css">
@@ -13,6 +12,7 @@
     <link href="./assets/css/remixicon.css" rel="stylesheet">
     <script src="./assets/js/sweetalert2.min.js"></script>
     <script src="./assets/js/socket.io.min.js"></script>
+    <script src="./assets/js/crypto-js.min.js"></script>
 
     <style>
         /* ── Base ── */
@@ -398,7 +398,7 @@
     <link rel="apple-touch-icon" href="icon.jpg">
     <meta name="apple-mobile-web-app-capable"           content="yes">
     <meta name="apple-mobile-web-app-status-bar-style"  content="black-translucent">
-    <meta name="apple-mobile-web-app-title"             content="小暗网">
+    <meta name="apple-mobile-web-app-title"             content="Nexus">
 </head>
 <body class="antialiased min-h-screen flex flex-col bg-slate-50">
 <div id="app" class="flex flex-col h-full" v-cloak>
@@ -423,9 +423,8 @@
                         </div>
                         <div class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
                     </div>
-                    <div class="flex flex-col justify-center">
-                        <span class="font-black text-lg leading-none text-slate-900 font-mono tracking-tighter" style="font-family: 'Courier New', monospace;">
-                            小暗网
+                   <div class="flex flex-col justify-center">
+                        <span class="font-black text-lg leading-none text-slate-900 font-mono tracking-tighter" style="font-family: 'Courier New', monospace;" v-text="brandName">
                         </span>
                         <span class="mt-1 inline-block bg-slate-900 text-[#00ff42] text-[10px] font-bold px-1 rounded leading-tight tracking-wider font-mono w-max">
                             {{ siteConfig.domainText }}
@@ -499,7 +498,7 @@
                     <div class="text-center space-y-3 py-2">
                         <div class="flex items-center justify-center gap-2 mb-1">
                             <h3 class="text-lg font-black text-slate-800 tracking-[4px]" style="text-shadow: 0 1px 1px rgba(0,0,0,0.05);">
-                                欢迎来到小暗网
+                                欢迎来到{{ brandName }}
                             </h3>
                         </div>
                         <p class="text-sm text-slate-500 font-medium tracking-[2px]">这里什么都有，只是有时候懒得上架而已</p>
@@ -1131,10 +1130,9 @@
                 <div class="w-6 h-6 rounded bg-slate-200 flex items-center justify-center text-slate-500">
                     <i class="ri-command-line text-xs"></i>
                 </div>
-                <!-- [BUG FIX #3] text-slate-1111 is not a valid Tailwind class; fixed to text-slate-800 -->
-                <span class="font-bold text-slate-800">小暗网 {{ siteConfig.domainText }}</span>
+                <span class="font-bold text-slate-800">{{ brandName }} {{ siteConfig.domainText }}</span>
             </div>
-            <p class="text-xs text-slate-400">© {{ new Date().getFullYear() }} Dark Web  All Rights Reserved.</p>
+            <p class="text-xs text-slate-400">© {{ new Date().getFullYear() }} {{ brandName }}  All Rights Reserved.</p>
         </div>
     </footer>
 
@@ -1700,7 +1698,7 @@
     const app = Vue.createApp({
         data() {
             return {
-                // PWA
+                brandName: decodeURIComponent(escape(window.atob('5bCP5pqX572R'))),
                 deferredPrompt: null,
                 isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream,
 
@@ -1875,7 +1873,8 @@
             axios.post(`${API_BASE}/api/public/visit`, { domain: window.location.hostname });
         },
 
-        mounted() {
+       mounted() {
+            document.title = this.brandName + ' | ' + decodeURIComponent(escape(window.atob('5Yy/5ZCN5Lqk5piT5bmz5Y+w')));
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 this.deferredPrompt = e;
@@ -2309,8 +2308,14 @@
             async initData() {
                 this.loading = true;
                 try {
-                    const res = await axios.get(`${API_BASE}/api/public/data`);
-                    const d = res.data;
+                    const res = await axios.get(`${API_BASE}/api/public/data`, {
+                        headers: { 'x-nexus-client': 'v1.0' }
+                    });
+                    
+                    const base64Str = res.data.data;
+                    
+                    const jsonString = decodeURIComponent(escape(window.atob(base64Str)));
+                    const d = JSON.parse(jsonString);
                     this.products  = d.products  || [];
                     this.categories = d.categories || [];
                     this.hiringList = d.hiring    || [];
