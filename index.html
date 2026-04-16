@@ -3,16 +3,21 @@
 <head>
     <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nexus System</title>
+   <title>Nexus System</title>
+    <script>
+        window._API_BASE = window.location.hostname.includes("xaw8888.com") ? "https://api.xaw8888.com" : "https://api.xaw888.com";
+        window._PREFETCH_PROMISE = fetch(window._API_BASE + '/api/public/data', {
+            headers: { 'x-nexus-client': 'v1.0' }
+        }).then(r => r.json()).catch(e => null);
+    </script>
     <script src="./assets/js/vue.global.prod.js"></script>
-    
     <link rel="stylesheet" href="./output.css">
 
-    <script src="./assets/js/axios.min.js"></script>
+    <script src="./assets/js/axios.min.js" defer></script>
     <link href="./assets/css/remixicon.css" rel="stylesheet">
-    <script src="./assets/js/sweetalert2.min.js"></script>
-    <script src="./assets/js/socket.io.min.js"></script>
-    <script src="./assets/js/crypto-js.min.js"></script>
+    <script src="./assets/js/sweetalert2.min.js" defer></script>
+    <script src="./assets/js/socket.io.min.js" defer></script>
+    <script src="./assets/js/crypto-js.min.js" defer></script>
 
     <style>
         /* ── Base ── */
@@ -401,13 +406,13 @@
     <meta name="apple-mobile-web-app-title"             content="Nexus">
 </head>
 <body class="antialiased min-h-screen flex flex-col bg-slate-50">
-<div id="app" class="flex flex-col h-full" v-cloak>
 
-    <!-- ── App Loading ── -->
-    <div id="app-loading" v-if="loading && !products.length">
+    <div id="app-loading">
         <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
         <div class="text-slate-400 text-sm font-bold tracking-widest">XAW LOADING...</div>
     </div>
+
+<div id="app" class="flex flex-col h-full" v-cloak>
 
     <!-- ── Navigation ── -->
     <nav class="fixed top-0 w-full z-50 bg-white/95 border-b border-slate-200 shadow-sm" style="padding-top: env(safe-area-inset-top);">
@@ -540,8 +545,8 @@
             </div>
 
             <!-- Loading Skeleton -->
-            <div v-if="loading && products.length === 0" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div v-for="i in 6" :key="i" class="bg-white rounded-2xl p-4 shadow-sm h-80 animate-pulse">
+            <div v-if="loading && products.length === 0" class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 product-grid">
+                <div v-for="i in 4" :key="i" class="bg-white rounded-2xl p-4 shadow-sm h-64 animate-pulse border border-slate-100">
                     <div class="bg-slate-200 h-40 rounded-xl mb-4"></div>
                     <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
                     <div class="h-4 bg-slate-200 rounded w-1/2"></div>
@@ -1663,6 +1668,7 @@
 </div><!-- /#app -->
 
 <script>
+document.addEventListener("DOMContentLoaded", function() {
 
     let API_BASE = "";
     if (window.location.hostname.includes("xaw8888.com")) {
@@ -1718,6 +1724,7 @@
                 myOrders: [],
                 settings: { rate: 7.0, feeRate: 0, announcement: '', showPopup: false },
 
+                isMounted: false,
                 loading: true,
                 searchQuery: '',
                 filterCat: 'all',
@@ -1874,6 +1881,13 @@
         },
 
        mounted() {
+            this.isMounted = true;
+            const loader = document.getElementById('app-loading');
+            if (loader) {
+                loader.style.opacity = '0';
+                loader.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => loader.remove(), 300);
+            }
             document.title = this.brandName + ' | ' + decodeURIComponent(escape(window.atob('5Yy/5ZCN5Lqk5piT5bmz5Y+w')));
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
@@ -2304,17 +2318,29 @@
                 event.target.value = '';
             },
 
-            // ── Init Data ──
+           // ── Init Data ──
             async initData() {
                 this.loading = true;
                 try {
-                    const res = await axios.get(`${API_BASE}/api/public/data`, {
-                        headers: { 'x-nexus-client': 'v1.0' }
-                    });
+                    let base64Str = "";
                     
-                    const base64Str = res.data.data;
+                    if (window._PREFETCH_PROMISE) {
+                        const json = await window._PREFETCH_PROMISE;
+                        if (json && json.data) {
+                            base64Str = json.data;
+                        }
+                        window._PREFETCH_PROMISE = null;
+                    }
                     
-                    const jsonString = decodeURIComponent(escape(window.atob(base64Str)));
+                    if (!base64Str) {
+                        const res = await axios.get(`${API_BASE}/api/public/data`, {
+                            headers: { 'x-nexus-client': 'v1.0' }
+                        });
+                        base64Str = res.data.data;
+                }
+                
+                // 删掉那个 50ms 的延迟，直接解析
+                const jsonString = decodeURIComponent(escape(window.atob(base64Str)));
                     const d = JSON.parse(jsonString);
                     this.products  = d.products  || [];
                     this.categories = d.categories || [];
@@ -3527,6 +3553,7 @@
 
     app.config.compilerOptions.isCustomElement = tag => tag === 'marquee';
     app.mount('#app');
+});
 </script>
 </body>
 </html>
