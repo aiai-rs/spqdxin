@@ -292,11 +292,17 @@
         /* [MERGE] The two duplicate @media (max-width: 640px) blocks have
            been merged into a single block here. */
         @media (max-width: 640px) {
-            html { font-size: 14px; }
-            .product-grid { gap: 10px !important; }
-            .p-4 { padding: 1rem !important; }
-            .product-grid { grid-template-columns: repeat(2, 1fr) !important; }
-        }
+    html { font-size: 14px; }
+    .product-grid { gap: 10px !important; }
+    .p-4 { padding: 1rem !important; }
+    .product-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    
+    /* 修复手机端分类与商品间距过远 */
+    .product-header {
+        margin-bottom: 0.25rem !important;
+        gap: 0.125rem !important;
+    }
+}
 
         @media (max-height: 600px) {
             #mobile-bottom-nav {
@@ -520,28 +526,52 @@
 
         <!-- ── Home Products ── -->
         <div v-if="view === 'home'" class="animate-fade-in">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-                <h2 class="text-2xl font-bold text-slate-800 tracking-tight self-start md:self-center">
-                    {{ filterCat === 'all' ? '全部商品' : filterCat }}
-                </h2>
-                <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                    <div class="relative group">
-                        <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition"></i>
-                        <input v-model="searchQuery" type="text" placeholder="搜索商品..." class="w-full md:w-64 bg-white border border-slate-200 rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-50 transition shadow-sm">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-1 md:gap-3 mb-6 md:mb-8 product-header">
+    <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight self-start md:self-center">
+        {{ filterCat === 'all' ? '全部商品' : filterCat }}
+    </h2>
+    <div class="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto mt-3">
+                        <div class="relative group">
+                            <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition"></i>
+                            <input v-model="searchQuery" type="text" placeholder="搜索商品..." class="w-full md:w-64 bg-white border border-slate-200 rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-50 transition shadow-sm">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                        <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                            <button @click="filterCat = 'all', filterSubCat = 'all'"
+                                :class="[filterCat === 'all' ? 'btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50' : 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300']"
+                                class="px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95">
+                                全部
+                            </button>
+                            <button v-for="cat in categories" :key="cat.main" @click="filterCat = cat.main, filterSubCat = 'all'"
+                                :class="[filterCat === cat.main ? 'btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50' : 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300']"
+                                class="px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95">
+                                {{ cat.main }}
+                            </button>
+                        </div>
+                        <div v-if="filterCat !== 'all' && activeSubCategories.length > 0" 
+                             class="mt-2 p-3 bg-slate-100/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 animate-fade-in-up relative">
+                            <div class="absolute -top-2 left-10 w-4 h-4 bg-slate-100/80 border-l border-t border-slate-200/50 rotate-45"></div>
+                            
+                            <div class="flex items-center gap-2 mb-2 px-1">
+                                <i class="ri-node-tree text-brand-500 text-xs"></i>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">子类目详情</span>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2">
+                                <button @click="filterSubCat = 'all'"
+                                    :class="[filterSubCat === 'all' ? 'bg-brand-500 text-white shadow-sm' : 'bg-white text-slate-500 border border-slate-200 hover:border-brand-300']"
+                                    class="px-4 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-200 active:scale-95">
+                                    全部展示
+                                </button>
+                                <button v-for="sub in activeSubCategories" :key="sub" @click="filterSubCat = sub"
+                                    :class="[filterSubCat === sub ? 'bg-brand-500 text-white shadow-sm' : 'bg-white text-slate-500 border border-slate-200 hover:border-brand-300']"
+                                    class="px-4 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-200 active:scale-95">
+                                    {{ sub }}
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex flex-wrap gap-3 w-full md:w-auto">
-                        <button @click="filterCat = 'all'"
-                            :class="filterCat === 'all' ? 'btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50' : 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300'"
-                            class="px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95">
-                            全部
-                        </button>
-                        <button v-for="cat in categories" :key="cat" @click="filterCat = cat"
-                            :class="filterCat === cat ? 'btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50' : 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300'"
-                            class="px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95">
-                            {{ cat }}
-                        </button>
-                    </div>
-                </div>
+                </div>
             </div>
 
             <!-- Loading Skeleton -->
@@ -1727,8 +1757,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 isMounted: false,
                 loading: true,
                 searchQuery: '',
-                filterCat: 'all',
-                mobileMenuOpen: false,
+                filterCat: 'all',
+                filterSubCat: 'all',
+                mobileMenuOpen: false,
 
                 // Invite
                 inviteModal: { open: false, list: [], totalEarned: 0, loading: false },
@@ -1802,14 +1833,20 @@ document.addEventListener("DOMContentLoaded", function() {
         },
 
         computed: {
-            filteredProducts() {
-                let list = this.products.filter(p => {
-                    const matchesSearch = !this.searchQuery ||
-                        p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                        (p.description || '').toLowerCase().includes(this.searchQuery.toLowerCase());
-                    const matchesCat = this.filterCat === 'all' || p.category === this.filterCat;
-                    return matchesSearch && matchesCat;
-                });
+            activeSubCategories() {
+                if (this.filterCat === 'all') return [];
+                const catObj = this.categories.find(c => c.main === this.filterCat);
+                return catObj ? catObj.subs : [];
+            },
+            filteredProducts() {
+                let list = this.products.filter(p => {
+                    const matchesSearch = !this.searchQuery ||
+                        p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                        (p.description || '').toLowerCase().includes(this.searchQuery.toLowerCase());
+                    const matchesCat = this.filterCat === 'all' || p.category === this.filterCat;
+                    const matchesSubCat = this.filterSubCat === 'all' || p.sub_category === this.filterSubCat;
+                    return matchesSearch && matchesCat && matchesSubCat;
+                });
                 return list.sort((a, b) => {
                     const pinA = a.is_pinned ? 1 : 0;
                     const pinB = b.is_pinned ? 1 : 0;
@@ -2101,30 +2138,42 @@ document.addEventListener("DOMContentLoaded", function() {
                     this.initData();
                 });
 
-               this.socket.on('product_added', (newProduct) => {
+              this.socket.on('product_added', (newProduct) => {
                     this.products.unshift(newProduct);
-                    if (newProduct.category && !this.categories.includes(newProduct.category)) {
-                        this.categories.push(newProduct.category);
+                    const existingCat = this.categories.find(c => c.main === newProduct.category);
+                    if (!existingCat && newProduct.category) {
+                        this.categories.push({ main: newProduct.category, subs: newProduct.sub_category ? [newProduct.sub_category] : [] });
+                    } else if (existingCat && newProduct.sub_category && !existingCat.subs.includes(newProduct.sub_category)) {
+                        existingCat.subs.push(newProduct.sub_category);
                     }
                 });
 
-                // 新增监听：后台分类排序保存时触发
-                this.socket.on('global_update', (data) => {
-    if (data) {
-        if (data.categories) this.categories = data.categories;
-        if (data.rate) this.settings.rate = data.rate;
-        if (data.feeRate !== undefined) this.settings.feeRate = data.feeRate;
-        if (data.announcement) this.settings.announcement = data.announcement;
-    }
+               // 新增监听：后台分类排序保存时触发
+                this.socket.on('global_update', (data) => {
+    if (data) {
+        if (data.categories) {
+            const oldCategories = this.categories;
+            this.categories = data.categories.map(catName => {
+                const existing = oldCategories.find(c => c.main === catName);
+                return existing ? existing : { main: catName, subs: [] };
+            });
+        }
+        if (data.rate) this.settings.rate = data.rate;
+        if (data.feeRate !== undefined) this.settings.feeRate = data.feeRate;
+        if (data.announcement) this.settings.announcement = data.announcement;
+    }
 });
 
-               this.socket.on('product_updated', (updatedProduct) => {
+               this.socket.on('product_updated', (updatedProduct) => {
                     const index = this.products.findIndex(p => p.id == updatedProduct.id);
                     if (index !== -1) {
                         this.products[index] = { ...this.products[index], ...updatedProduct };
                     }
-                    if (updatedProduct.category && !this.categories.includes(updatedProduct.category)) {
-                        this.categories.push(updatedProduct.category);
+                    const existingCat = this.categories.find(c => c.main === updatedProduct.category);
+                    if (!existingCat && updatedProduct.category) {
+                        this.categories.push({ main: updatedProduct.category, subs: updatedProduct.sub_category ? [updatedProduct.sub_category] : [] });
+                    } else if (existingCat && updatedProduct.sub_category && !existingCat.subs.includes(updatedProduct.sub_category)) {
+                        existingCat.subs.push(updatedProduct.sub_category);
                     }
                     if (this.productDetailModal.open && this.productDetailModal.prod.id == updatedProduct.id) {
                         this.currentImgIndex = 0;
@@ -2143,14 +2192,19 @@ document.addEventListener("DOMContentLoaded", function() {
                     this.products = this.products.filter(p => p.id != productId);
                 });
 
-                this.socket.on('products_hot_changed', (data) => {
+                this.socket.on('products_category_changed', (data) => {
                     const strIds = data.ids.map(String);
                     this.products.forEach(p => {
                         if (strIds.includes(String(p.id))) {
-                            p.is_hot = data.is_hot;
-                            p.hot_time = data.is_hot ? new Date().toISOString() : null;
+                            p.category = data.category;
+                            p.sub_category = data.sub_category;
                         }
                     });
+
+                    const catObj = this.categories.find(c => c.main === data.category);
+                    if (catObj && data.sub_category && !catObj.subs.includes(data.sub_category)) {
+                        catObj.subs.push(data.sub_category);
+                    }
                 });
 
                 this.socket.on('setting_updated', (data) => {
@@ -2449,19 +2503,20 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
             },
 
-            setView(v) {
-                if (this.view === 'hire_chat' && v !== 'hire_chat') {
-                    this.chatMessages = [];
-                }
-                if (v === 'products') {
-                    this.view = 'home';
-                    this.filterCat = 'all';
-                } else {
-                    this.view = v;
-                    if (v === 'home') this.filterCat = 'all';
-                }
-                this.mobileMenuOpen = false;
-            },
+           setView(v) {
+                if (this.view === 'hire_chat' && v !== 'hire_chat') {
+                    this.chatMessages = [];
+                }
+                if (v === 'products') {
+                    this.view = 'home';
+                    this.filterCat = 'all';
+                    this.filterSubCat = 'all';
+                } else {
+                    this.view = v;
+                    if (v === 'home') { this.filterCat = 'all'; this.filterSubCat = 'all'; }
+                }
+                this.mobileMenuOpen = false;
+            },
 
             checkLoginAndGo(target) {
                 if (!this.user.id) { this.openAuth('login'); return; }
