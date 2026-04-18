@@ -2151,12 +2151,19 @@ document.addEventListener("DOMContentLoaded", function() {
                // 新增监听：后台分类排序保存时触发
                 this.socket.on('global_update', (data) => {
     if (data) {
-        if (data.categories) {
-            const oldCategories = this.categories;
-            this.categories = data.categories.map(catName => {
-                const existing = oldCategories.find(c => c.main === catName);
-                return existing ? existing : { main: catName, subs: [] };
-            });
+        if (data.type === 'category_sort' && data.sortedNames) {
+            const getSortValue = (name) => {
+                const index = data.sortedNames.indexOf(name);
+                return index === -1 ? 99999 : index; // 找不到的排到最后
+            };
+            if (data.target === 'main') {
+                this.categories.sort((a, b) => getSortValue(a.main) - getSortValue(b.main));
+            } else {
+                const targetCat = this.categories.find(c => c.main === data.target);
+                if (targetCat && targetCat.subs) {
+                    targetCat.subs.sort((a, b) => getSortValue(a) - getSortValue(b));
+                }
+            }
         }
         if (data.rate) this.settings.rate = data.rate;
         if (data.feeRate !== undefined) this.settings.feeRate = data.feeRate;
