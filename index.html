@@ -1188,8 +1188,8 @@
         <img v-for="(imgUrl, idx) in currentProdImgs" :key="idx"
              v-show="currentImgIndex === idx"
              :src="imgUrl" 
-             class="w-full h-full object-contain cursor-pointer" 
-             @click="nextImage">
+             class="w-full h-full object-contain cursor-zoom-in" 
+             @click="openImagePreview(imgUrl)">
     </template>
     
     <div v-else class="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-slate-300">
