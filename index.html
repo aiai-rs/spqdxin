@@ -1188,8 +1188,8 @@
         <img v-for="(imgUrl, idx) in currentProdImgs" :key="idx"
              v-show="currentImgIndex === idx"
              :src="imgUrl" 
-             class="w-full h-full object-contain cursor-zoom-in" 
-             @click="openImagePreview(imgUrl)">
+             class="w-full h-full object-contain cursor-pointer" 
+             @click="nextImage">
     </template>
     
     <div v-else class="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-slate-300">
@@ -2151,19 +2151,12 @@ document.addEventListener("DOMContentLoaded", function() {
                // 新增监听：后台分类排序保存时触发
                 this.socket.on('global_update', (data) => {
     if (data) {
-        if (data.type === 'category_sort' && data.sortedNames) {
-            const getSortValue = (name) => {
-                const index = data.sortedNames.indexOf(name);
-                return index === -1 ? 99999 : index; // 找不到的排到最后
-            };
-            if (data.target === 'main') {
-                this.categories.sort((a, b) => getSortValue(a.main) - getSortValue(b.main));
-            } else {
-                const targetCat = this.categories.find(c => c.main === data.target);
-                if (targetCat && targetCat.subs) {
-                    targetCat.subs.sort((a, b) => getSortValue(a) - getSortValue(b));
-                }
-            }
+        if (data.categories) {
+            const oldCategories = this.categories;
+            this.categories = data.categories.map(catName => {
+                const existing = oldCategories.find(c => c.main === catName);
+                return existing ? existing : { main: catName, subs: [] };
+            });
         }
         if (data.rate) this.settings.rate = data.rate;
         if (data.feeRate !== undefined) this.settings.feeRate = data.feeRate;
@@ -2408,29 +2401,34 @@ document.addEventListener("DOMContentLoaded", function() {
                     this.hiringList = d.hiring    || [];
                     this.settings   = { rate: d.rate, feeRate: d.feeRate, announcement: d.announcement, showPopup: d.showPopup, wallet: d.wallet };
 
-                    if (this.settings.showPopup && this.settings.showPopup !== 'false' && this.settings.announcement) {
+                   if (this.settings.showPopup !== null && this.settings.showPopup !== undefined && this.settings.showPopup !== 'false' && this.settings.announcement) {
                         const duration   = parseInt(this.settings.showPopup);
                         const lastPopStr = localStorage.getItem('nexus_last_pop');
                         const now        = Date.now();
-                        if (!lastPopStr || (now > parseInt(lastPopStr) + duration)) {
+                        if (duration === 0 || !lastPopStr || (now > parseInt(lastPopStr) + duration)) {
                             Swal.fire({
                                 html: `
-                                    <div class="flex flex-col items-center pt-4 pb-1 px-1">
-                                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-brand-600 flex items-center justify-center mb-3 shadow-md shadow-blue-500/40 transform rotate-3">
-                                            <i class="ri-notification-4-fill text-2xl text-white -rotate-3"></i>
+                                    <div class="flex flex-col items-center pt-4 pb-1 px-2">
+                                        <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 text-blue-500">
+                                            <i class="ri-notification-4-fill text-2xl"></i>
                                         </div>
-                                        <h3 class="text-xl font-black text-slate-800 tracking-wide mb-3">平台公告</h3>
-                                        <div class="text-[13px] text-slate-600 leading-relaxed bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 w-full text-left font-medium">
-                                            ${this.settings.announcement}
-                                        </div>
+                                        <h3 class="text-lg font-bold text-slate-800 tracking-widest mb-4">平台公告</h3>
+                                        <div class="text-[14px] text-slate-600 leading-loose tracking-wide whitespace-pre-wrap bg-slate-50 p-5 rounded-2xl border border-slate-100 w-full text-left font-medium">${this.settings.announcement}</div>
                                     </div>
                                 `,
                                 showConfirmButton: true,
                                 confirmButtonText: '我知道了',
                                 buttonsStyling: false,
-                                customClass: {
-                                    popup: 'rounded-[1.5rem] border border-white/80 shadow-xl bg-white/95 backdrop-blur-xl p-2 w-[85%] max-w-[320px]',
-                                    confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mb-3 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
+                                         customClass: {
+                                    popup: 'rounded-[2rem] border border-slate-100 shadow-2xl bg-white pt-4 pb-3 px-3 w-[90%] max-w-[340px]',
+                                    confirmButton: 'w-[95%] text-white tracking-widest text-base font-bold py-4 rounded-xl mt-2 mb-1 shadow-lg shadow-blue-500/30 active:scale-95 transition-all whitespace-nowrap'
+                                },
+                                didOpen: () => {
+                                    const btn = Swal.getConfirmButton();
+                                    btn.style.background = 'linear-gradient(90deg, #3b82f6 0%, #4f46e5 100%)';
+                                    btn.style.border = 'none';
+                                    btn.style.outline = 'none';
+                                    btn.style.webkitTapHighlightColor = 'transparent';
                                 }
                             });
                             localStorage.setItem('nexus_last_pop', now.toString());
