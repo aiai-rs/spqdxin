@@ -20,6 +20,10 @@
     <script src="./assets/js/crypto-js.min.js" defer></script>
 
     <style>
+        .swal2-container {
+            z-index: 999999 !important;
+        }
+
         /* ── Base ── */
         html, body {
             /* [MERGE] Was declared in two separate places; unified here */
@@ -753,13 +757,18 @@
                 <div class="flex items-center gap-3">
                     <button @click="setView('hiring')" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-500 transition shadow-sm"><i class="ri-arrow-left-line"></i></button>
                     <div>
-                        <h2 class="text-lg font-bold text-slate-800">对接专线</h2>
+                       <h2 class="text-lg font-bold text-slate-800">对接专线</h2>
                         <div class="text-[10px] flex items-center gap-1 font-medium mt-0.5" :class="isServiceOnline ? 'text-emerald-500' : 'text-slate-400'">
                             <span class="w-1.5 h-1.5 rounded-full animate-pulse" :class="isServiceOnline ? 'bg-emerald-500' : 'bg-slate-400'"></span> {{ isServiceOnline ? 'HR 老板助理在线 (15:00-24:00)' : '助理 离线休息中 (15:00-24:00)' }}
                         </div>
                     </div>
                 </div>
-                <div class="w-8 h-8 bg-brand-50 text-brand-500 rounded-full flex items-center justify-center font-bold text-xs border border-brand-100">HR</div>
+                <div class="flex items-center gap-2">
+                    <button @click="showNotificationTips" class="flex items-center gap-1.5 px-3.5 py-1.5 bg-brand-50 text-brand-600 rounded-full text-xs sm:text-sm font-bold hover:bg-brand-100 transition border border-brand-100 shadow-sm active:scale-95">
+                        <i class="ri-notification-3-line text-sm"></i> 温馨提示
+                    </button>
+                    <div class="w-8 h-8 bg-brand-50 text-brand-500 rounded-full flex items-center justify-center font-bold text-xs border border-brand-100">HR</div>
+                </div>
             </div>
 
             <div id="hire-chat-msgs" class="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#f8fafc] flex flex-col gap-4 scrollbar-hide">
@@ -1089,7 +1098,7 @@
     <div class="chat-widget" v-if="view !== 'hire_chat'">
         <div v-if="chatOpen" class="chat-overlay" @click="toggleChat"></div>
 
-        <div v-if="chatOpen" class="chat-window flex flex-col animate-fade-in-up">
+       <div v-if="chatOpen" class="chat-window flex flex-col animate-fade-in-up">
             <div class="px-5 py-3 border-b border-slate-100 flex justify-between items-center bg-white flex-shrink-0 z-10 shadow-sm">
                 <div class="flex items-center gap-3">
                     <div class="relative">
@@ -1105,9 +1114,14 @@
                         </div>
                     </div>
                 </div>
-                <button @click="toggleChat" class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition">
-                    <i class="ri-close-line text-xl"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button @click="showNotificationTips" class="flex items-center gap-1.5 px-3.5 py-1.5 bg-brand-50 text-brand-600 rounded-full text-xs sm:text-sm font-bold hover:bg-brand-100 transition border border-brand-100 shadow-sm active:scale-95">
+                        <i class="ri-notification-3-line text-sm"></i> 温馨提示
+                    </button>
+                    <button @click="toggleChat" class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition shadow-sm">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                </div>
             </div>
             <div id="chat-msgs" class="flex-1 overflow-y-auto p-4 bg-slate-50 flex flex-col gap-2">
                 <div v-for="(msg, idx) in chatMessages" :key="idx" class="flex w-full my-1" 
@@ -1986,7 +2000,7 @@ document.addEventListener("DOMContentLoaded", function() {
         },
 
         methods: {
-            // ── [BUG FIX #2] Wrapper for window.open used in templates ──
+           // ── [BUG FIX #2] Wrapper for window.open used in templates ──
             // window is not in Vue's template scope; using a method fixes runtime errors.
             openInNewTab(url) {
                 window.open(url, '_blank');
@@ -1996,6 +2010,95 @@ document.addEventListener("DOMContentLoaded", function() {
                 this.imagePreviewModal.url = url;
                 this.imagePreviewModal.open = true;
             },
+            
+            showNotificationTips() {
+                Swal.fire({
+                    title: '温馨提示 📢',
+                    html: `
+                        <div class="text-left text-sm text-slate-600 space-y-4 font-medium leading-relaxed mt-2">
+                            <p class="text-brand-600 font-bold text-center mb-2 text-base">别错过您的重要消息哦！</p>
+                            <p>为了保证您能及时收到订单发货通知和客服的专属回复，强烈建议您开启通知功能！</p>
+
+                            <div class="bg-blue-50 p-3.5 rounded-xl border border-blue-100 shadow-inner">
+                                <h4 class="font-bold text-blue-800 mb-1.5 flex items-center gap-1.5"><i class="ri-android-line text-lg"></i> 安卓系统 / 电脑端</h4>
+                                <p class="text-xs text-blue-700 leading-snug">非常简单，直接点击下方的<b class="text-blue-600 bg-white px-1 py-0.5 rounded shadow-sm mx-1">开启通知📢</b>按钮，允许就可以了！</p>
+                            </div>
+
+                            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 shadow-inner">
+                                <h4 class="font-bold text-slate-800 mb-1.5 flex items-center gap-1.5"><i class="ri-apple-line text-lg"></i> 苹果 / iOS 系统</h4>
+                                <p class="text-xs text-slate-600 mb-3 leading-snug">由于苹果系统的限制，普通网页无法直接给您发送通知。为了不错过消息，建议您将本站保存为<b class="text-slate-800 font-bold">“PWA 网页轻应用”</b>。</p>
+                                
+                                <div class="text-xs bg-white p-3 rounded-lg border border-slate-100 space-y-2 shadow-sm">
+                                    <p>💡 <b class="text-slate-800 text-sm">请放心，这不是传统的 App！</b></p>
+                                    <p class="text-slate-500">您可以把它理解为一个<b>“超级网页”</b>：</p>
+                                    <p class="leading-relaxed">🔒 <b>安全轻量</b>：无需去应用商店繁琐下载，不占手机内存，绝不读取您的隐私数据，直接将其“添加到主屏幕”即可。</p>
+                                    <p class="leading-relaxed">🚀 <b>丝滑体验</b>：虽然是网页，但添加到桌面后，您将获得和原生 App 一样毫无卡顿的操作体验！(注：首次进入如遇白屏加载，请耐心等待几秒哦)</p>
+                                </div>
+                                
+                              <div class="mt-3 pt-3 border-t border-slate-200">
+                                    <p class="text-sm font-bold text-slate-800 mb-1 flex items-center gap-1"><i class="ri-download-cloud-2-line text-brand-500"></i> 怎么安装到桌面？</p>
+                                    <p class="text-xs text-slate-500">无论您是苹果还是安卓用户，都可以前往<b class="text-slate-700">【我的】</b>页面最底部，查看详细的安装引导教程。</p>
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    showCloseButton: true,
+                    showConfirmButton: true,
+                    confirmButtonText: '<i class="ri-notification-badge-line"></i> 开启通知📢',
+                    showCancelButton: true,
+                    cancelButtonText: '稍后再说',
+                    customClass: {
+                        popup: 'rounded-3xl shadow-2xl border border-slate-100 max-w-[90%] sm:max-w-md',
+                        confirmButton: 'flex-1 btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 hover:-translate-y-0.5 active:scale-95 transition-all m-1',
+                        cancelButton: 'flex-1 bg-slate-100 text-slate-500 font-bold py-3.5 rounded-xl hover:bg-slate-200 active:scale-95 transition-all m-1',
+                        actions: 'flex w-full gap-2 px-5 pb-5 mt-2'
+                    },
+                    buttonsStyling: false,
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+                        
+                        if (this.isIOS && !isStandalone) {
+                            Swal.fire({
+                                icon: 'info',
+                                title: '苹果系统限制',
+                                text: '苹果设备请前往【我的】页面最底部点击【下载APP】安装到桌面后即可接收通知！',
+                                showCancelButton: true,
+                                confirmButtonText: '去安装',
+                                cancelButtonText: '稍后',
+                                customClass: {
+                                    popup: 'rounded-3xl shadow-2xl border border-slate-100',
+                                    confirmButton: 'flex-1 btn-gradient text-white font-bold py-3 rounded-xl shadow-lg m-1',
+                                    cancelButton: 'flex-1 bg-slate-100 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-200 m-1',
+                                    actions: 'flex w-full gap-2 px-4 pb-4 mt-2'
+                                },
+                                buttonsStyling: false,
+                            }).then((res) => {
+                                if (res.isConfirmed) {
+                                    this.checkLoginAndGo('profile');
+                                    setTimeout(() => {
+                                        this.showAddToHomeGuide('user');
+                                    }, 400);
+                                }
+                            });
+                        } else {
+                            if ('Notification' in window) {
+                                Notification.requestPermission().then(permission => {
+                                    if (permission === 'granted') {
+                                        this.initPushSubscription();
+                                        Swal.fire({ icon: 'success', title: '已允许通知', text: '您将能及时收到最新消息！', timer: 2000, showConfirmButton: false, customClass: { popup: 'rounded-3xl' } });
+                                    } else {
+                                        Swal.fire({ icon: 'warning', title: '权限未开启', text: '请在浏览器设置中允许本站的通知权限', timer: 2500, showConfirmButton: false, customClass: { popup: 'rounded-3xl' } });
+                                    }
+                                });
+                            } else {
+                                Swal.fire({ icon: 'error', title: '不支持', text: '您的浏览器不支持通知功能', customClass: { popup: 'rounded-3xl' } });
+                            }
+                        }
+                    }
+                });
+            },
+
          showAnnouncement() {
                 if (!this.settings.announcement) return;
                 Swal.fire({
