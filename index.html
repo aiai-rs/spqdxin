@@ -1842,6 +1842,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 notifiedQRCodes: safeJSONParse(sessionStorage.getItem('notified_qrs'), []),
                 chatInitialized: false,
                 socket: null,
+                newMessagesWhileHidden: false,
+                newHrMessagesWhileHidden: false,
             };
         },
 
@@ -1953,21 +1955,28 @@ document.addEventListener("DOMContentLoaded", function() {
             this.pollChat();
             setTimeout(() => { this.initPushSubscription(); }, 2000);
 
-            document.addEventListener('visibilitychange', () => {
-
-    if (document.visibilityState === 'visible') {
-
-        this.pollChat();
-
-        if (this.user && this.user.id) {
-
-            this.checkPendingQROrders();
-
-        }
-
-    }
-
-});
+         document.addEventListener('visibilitychange', async () => {
+                if (document.visibilityState === 'visible') {
+                    const diff = await this.pollChat();
+                    if (this.user && this.user.id) {
+                        this.checkPendingQROrders();
+                    }
+                    if (diff.csCount > 0 && !this.chatOpen) {
+                        this.unreadMessages += diff.csCount;
+                        const last = [...this.csMessages].reverse().find(m => m.sender === 'admin');
+                        if (last) this.showChatNotification(last.msg_type === 'image' ? '[图片]' : last.content, '客服发来新消息');
+                        this.messageSound.play().catch(() => {});
+                    }
+                   if (diff.hrCount > 0 && this.view !== 'hire_chat') {
+                        this.hrUnreadMessages += diff.hrCount;
+                        const lastHr = [...this.hrMessages].reverse().find(m => m.sender === 'admin');
+                        if (lastHr) this.showChatNotification(lastHr.msg_type === 'image' ? '[图片]' : lastHr.content, 'HR助理发来新消息');
+                        this.messageSound.play().catch(() => {});
+                    }
+                    if (diff.csCount > 0 && this.chatOpen) this.markChatAsRead('cs');
+                    if (diff.hrCount > 0 && this.view === 'hire_chat') this.markChatAsRead('hr');
+                }
+            });
 
            window.addEventListener('popstate', (e) => {
                 if (this.imagePreviewModal.open) {
@@ -2385,12 +2394,14 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         
         // 二维码自动弹窗（待支付且有二维码且未通知过且未过期）
-        if (data.order.status === '待支付' && data.order.qrcode_url &&
+       if (data.order.status === '待支付' && data.order.qrcode_url &&
             !this.notifiedQRCodes.includes(data.order.order_id) && !this.isOrderExpired(data.order)) {
-            this.notifiedQRCodes.push(data.order.order_id);
-            sessionStorage.setItem('notified_qrs', JSON.stringify(this.notifiedQRCodes));
-            this.showPaymentInfo(data.order);
-            this.messageSound.play().catch(() => {});
+            if (document.visibilityState === 'visible') {
+                this.notifiedQRCodes.push(data.order.order_id);
+                sessionStorage.setItem('notified_qrs', JSON.stringify(this.notifiedQRCodes));
+                this.showPaymentInfo(data.order);
+                this.messageSound.play().catch(() => {});
+            }
         }
     }
     
@@ -2414,15 +2425,14 @@ document.addEventListener("DOMContentLoaded", function() {
                     Swal.fire({ icon: 'error', title: '登录失效', text: '您的账号已被管理员删除', confirmButtonText: '确定' });
                 });
 
-                this.socket.on('new_message', (msg) => {
+               this.socket.on('new_message', (msg) => {
                     const sid_cs = this.user.id ? `user_${this.user.id}`    : this.chatSessionId;
                     const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-                    
                     const isHR = msg.session_id.startsWith('hr_');
-                    const targetArr = isHR ? this.hrMessages : this.csMessages;
-                    
-                    if (!targetArr.some(m => m.id == msg.id)) {
-                        targetArr.push(msg);
+                    if (isHR) {
+                        if (!this.hrMessages.some(m => m.id == msg.id)) this.hrMessages.push(msg);
+                    } else {
+                        if (!this.csMessages.some(m => m.id == msg.id)) this.csMessages.push(msg);
                     }
 
                    if ((this.view === 'hire_chat' && isHR) ||
@@ -2434,12 +2444,18 @@ document.addEventListener("DOMContentLoaded", function() {
                             if (box) box.scrollTop = box.scrollHeight;
                             if (msg.sender === 'admin') this.messageSound.play().catch(() => {});
                         });
-                    } else if (msg.session_id === sid_cs || msg.session_id === sid_hr) {
+                   } else if (msg.session_id === sid_cs || msg.session_id === sid_hr) {
                         if (msg.sender === 'admin') {
                             this.messageSound.play().catch(() => {});
                             const title = isHR ? 'HR 老板助理 发来新消息' : '客服发来新消息';
-                            if (!isHR && !this.chatOpen) this.unreadMessages++;
-                            if (isHR && this.view !== 'hire_chat') this.hrUnreadMessages++;
+                            if (!isHR && !this.chatOpen) {
+                                this.unreadMessages++;
+                                if (document.visibilityState !== 'visible') this.newMessagesWhileHidden = true;
+                            }
+                            if (isHR && this.view !== 'hire_chat') {
+                                this.hrUnreadMessages++;
+                                if (document.visibilityState !== 'visible') this.newHrMessagesWhileHidden = true;
+                            }
                             this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content, title);
                         }
                     }
@@ -2597,35 +2613,20 @@ document.addEventListener("DOMContentLoaded", function() {
                     this.checkQRCodes();
                 } catch (e) { console.error("加载订单失败", e); }
             },
-          async checkPendingQROrders() {
-
-                try {
-
-                    const res = await axios.get(`${API_BASE}/api/order?userId=${this.user.id}&status=pending_qr`);
-
-                    const pendingOrders = res.data || [];
-
-                    pendingOrders.forEach(newOrder => {
-
-                        const idx = this.myOrders.findIndex(o => o.order_id === newOrder.order_id);
-
-                        if (idx !== -1) {
-
-                            Object.assign(this.myOrders[idx], newOrder);
-
-                        } else {
-
-                            this.myOrders.unshift(newOrder);
-
-                        }
-
-                    });
-
-                    this.checkQRCodes();
-
-                } catch (e) { console.error("检查二维码失败", e); }
-
-            },
+       async checkPendingQROrders() {
+                try {
+                    const res = await axios.get(`${API_BASE}/api/order?userId=${this.user.id}`);
+                    this.myOrders = res.data || [];
+                    this.myOrders.forEach(order => {
+                        if (order.status === '待支付' && order.qrcode_url && !this.notifiedQRCodes.includes(order.order_id) && !this.isOrderExpired(order)) {
+                            this.notifiedQRCodes.push(order.order_id);
+                            sessionStorage.setItem('notified_qrs', JSON.stringify(this.notifiedQRCodes));
+                            this.showPaymentInfo(order);
+                            this.messageSound.play().catch(() => {});
+                        }
+                    });
+                } catch (e) { }
+            },
 
             checkQRCodes() {
                 this.myOrders.forEach(order => {
@@ -2757,69 +2758,31 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             },
 
-            async pollChat() {
-                if (!this.user.id && !this.chatSessionId) return;
+           async pollChat() {
+                if (!this.user.id && !this.chatSessionId) return { csCount: 0, hrCount: 0 };
                 try {
                     const sid_cs = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
                     const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-
                     const [res_cs, res_hr] = await Promise.all([
                         axios.get(`${API_BASE}/api/chat/history/${sid_cs}`),
                         axios.get(`${API_BASE}/api/chat/history/${sid_hr}`)
                     ]);
-
-                    const newCsMessages = res_cs.data || [];
-                    const newHrMessages = res_hr.data || [];
-                    const oldCsLength = this.csMessages.length;
-                    const oldHrLength = this.hrMessages.length;
-
-                    if (this.chatOpen) {
-                        this.csMessages = newCsMessages;
-                        this.chatMessages = newCsMessages;
-                        if (newCsMessages.length > oldCsLength) {
-                            this.$nextTick(() => {
-                                const box = document.getElementById('chat-msgs');
-                                if (box) box.scrollTop = box.scrollHeight;
-                                this.messageSound.play().catch(() => {});
-                            });
-                        }
-                    } else {
-                        const adminMsgs = newCsMessages.filter(m => m.sender === 'admin');
-                        const lastAdminMsg = adminMsgs.length > 0 ? adminMsgs[adminMsgs.length - 1] : null;
-                        if (newCsMessages.length > oldCsLength && this.chatInitialized && lastAdminMsg) {
-                            const newAdminMsgsCount = newCsMessages.slice(oldCsLength).filter(m => m.sender === 'admin').length;
-                            this.unreadMessages += newAdminMsgsCount;
-                            this.messageSound.play().catch(() => {});
-                            this.showChatNotification(lastAdminMsg.msg_type === 'image' ? '[图片]' : lastAdminMsg.content, '客服发来新消息');
-                        }
-                        this.csMessages = newCsMessages;
-                        if (this.view !== 'hire_chat') this.chatMessages = newCsMessages;
-                    }
-
+                    const newCs = res_cs.data || [];
+                    const newHr = res_hr.data || [];
+                    const csAdded = newCs.filter(m => m.sender === 'admin' && !this.csMessages.some(old => old.id == m.id));
+                    const hrAdded = newHr.filter(m => m.sender === 'admin' && !this.hrMessages.some(old => old.id == m.id));
+                    this.csMessages = newCs;
+                    this.hrMessages = newHr;
                     if (this.view === 'hire_chat') {
-                        this.hrMessages = newHrMessages;
-                        this.chatMessages = newHrMessages;
-                        if (newHrMessages.length > oldHrLength) {
-                            this.$nextTick(() => {
-                                const box = document.getElementById('hire-chat-msgs');
-                                if (box) box.scrollTop = box.scrollHeight;
-                                this.messageSound.play().catch(() => {});
-                            });
-                        }
+                        this.chatMessages = this.hrMessages;
                     } else {
-                        const adminMsgsHr = newHrMessages.filter(m => m.sender === 'admin');
-                        const lastAdminMsgHr = adminMsgsHr.length > 0 ? adminMsgsHr[adminMsgsHr.length - 1] : null;
-                        if (newHrMessages.length > oldHrLength && this.chatInitialized && lastAdminMsgHr) {
-                            const newAdminMsgsCountHr = newHrMessages.slice(oldHrLength).filter(m => m.sender === 'admin').length;
-                            this.hrUnreadMessages += newAdminMsgsCountHr;
-                            this.messageSound.play().catch(() => {});
-                            this.showChatNotification(lastAdminMsgHr.msg_type === 'image' ? '[图片]' : lastAdminMsgHr.content, 'HR 老板助理 发来新消息');
-                        }
-                        this.hrMessages = newHrMessages;
+                        this.chatMessages = this.csMessages;
                     }
-
                     this.chatInitialized = true;
-                } catch (e) {}
+                    return { csCount: csAdded.length, hrCount: hrAdded.length };
+                } catch (e) {
+                    return { csCount: 0, hrCount: 0 };
+                }
             },
 
             showChatNotification(text, title = '客服发来新消息') {
