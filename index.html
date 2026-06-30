@@ -1489,7 +1489,30 @@
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-2">充值金额 (USDT)</label>
                         <input v-model.number="rechargeForm.amount" type="number" min="1" step="0.0001" placeholder="请输入充值金额" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition">
-                        <div class="text-sm text-slate-400 mt-1">≈ ¥{{ (rechargeForm.amount * settings.rate).toFixed(2) }} (汇率: {{settings.rate}})</div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-3">
+                            <div class="flex justify-between text-sm mb-2">
+                                <span class="text-slate-500">充值金额:</span>
+                                <span class="text-slate-800 font-mono">{{ rechargeForm.amount || 0 }} USDT</span>
+                            </div>
+                            <div v-if="rechargeForm.method !== 'USDT'" class="flex justify-between text-sm mb-2">
+                                <span class="text-slate-500">当前汇率:</span>
+                                <span class="text-slate-800 font-mono">{{ settings.rate }}</span>
+                            </div>
+                            <div v-if="rechargeForm.method !== 'USDT' && settings.feeRate > 0" class="flex justify-between text-sm mb-2">
+                                <span class="text-slate-500">手续费 ({{ settings.feeRate }}%):</span>
+                                <span class="text-red-500 font-mono">+ ¥{{ (((rechargeForm.amount || 0) * settings.rate) * (settings.feeRate/100)).toFixed(2) }}</span>
+                            </div>
+                            <div class="border-t border-slate-200 my-3"></div>
+                            <div class="flex justify-between items-end">
+                                <span class="text-slate-800 font-bold text-sm">应付金额:</span>
+                                <span class="text-2xl font-bold text-brand-600 font-mono" v-if="rechargeForm.method === 'USDT'">
+                                    {{ rechargeForm.amount || 0 }} <span class="text-sm font-normal">USDT</span>
+                                </span>
+                                <span class="text-2xl font-bold text-brand-600 font-mono" v-else>
+                                    ¥{{ (((rechargeForm.amount || 0) * settings.rate) * (1 + settings.feeRate/100)).toFixed(2) }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-3">选择支付方式</label>
@@ -1539,7 +1562,7 @@
                     </div>
                     <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2 text-sm">
                         <div class="flex justify-between"><span class="text-slate-500">提现汇率</span><span class="font-mono">{{ settings.rate }}</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">手续费 ({{ withdrawForm.method === 'USDT' ? '0%' : '2%' }})</span><span class="text-red-500 font-mono">- {{ withdrawCalc.fee }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">手续费 ({{ withdrawForm.method === 'USDT' ? '0%' : settings.feeRate + '%' }})</span><span class="text-red-500 font-mono">- {{ withdrawCalc.fee }}</span></div>
                         <div class="flex justify-between border-t border-slate-200 pt-2"><span class="font-bold text-slate-800">预计到账</span><span class="font-bold text-emerald-600 font-mono">{{ withdrawCalc.final }}</span></div>
                     </div>
                     <div v-if="withdrawForm.method === 'USDT'">
@@ -1902,7 +1925,7 @@ document.addEventListener("DOMContentLoaded", function() {
             withdrawCalc() {
                 const amt = parseFloat(this.withdrawForm.amount) || 0;
                 const isUsdt = this.withdrawForm.method === 'USDT';
-                const feePercent = isUsdt ? 0 : 0.02;
+                const feePercent = isUsdt ? 0 : (this.settings.feeRate / 100);
                 const feeVal = amt * feePercent;
                 const finalAmount = amt - feeVal;
 
@@ -3294,47 +3317,25 @@ if (order.qrcode_url) {
                 this.rechargeSubmitting = true;
                 try {
                     const methodMap = { 'USDT': 'USDT', 'WeChat': 'wxpay', 'Alipay': 'alipay' };
-                    const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id, amount: this.rechargeForm.amount, method: methodMap[this.rechargeForm.method] || this.rechargeForm.method });
+const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id, amount: this.rechargeForm.amount, method: methodMap[this.rechargeForm.method] || this.rechargeForm.method });
                     if (res.data.success) {
                         this.rechargeModal.open = false;
-                        let htmlContent = '';
-                        if (this.rechargeForm.method === 'USDT') {
-                            htmlContent = `
-                                <div class="flex flex-col items-center pt-2">
-                                    <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3"><i class="ri-check-line text-4xl text-emerald-500"></i></div>
-                                    <h3 class="text-2xl font-bold text-slate-800 mb-1">充值提交成功</h3>
-                                    <div class="text-sm text-slate-500 mb-4">单号: <span class="font-mono font-bold text-slate-700">${res.data.orderId}</span></div>
-                                    <div class="text-sm text-slate-500 mb-1">请在 <b class="text-red-500 font-mono text-lg">30:00</b> 内完成支付</div>
-                                    <div class="mb-4"><span class="text-sm text-slate-500">支付金额:</span><span class="text-2xl font-bold text-red-500 ml-1">${res.data.usdtAmount} USDT</span></div>
-                                    <div class="w-full text-left mb-1 text-sm font-bold text-slate-700">支付地址 (TRC20):</div>
-                                    <div class="w-full bg-slate-50 p-3 rounded-xl border border-dashed border-brand-300 relative cursor-pointer hover:bg-blue-50 transition group"
-                                         onclick="navigator.clipboard.writeText('${res.data.wallet}'); const tip=document.getElementById('copy-tip-recharge'); tip.innerHTML='✅ 地址已复制，请仔细核对！'; tip.className='text-center text-xs text-emerald-600 mt-1 font-bold';">
-                                        <div class="font-mono text-sm font-bold text-slate-800 break-all text-center select-all">${res.data.wallet}</div>
-                                        <div id="copy-tip-recharge" class="text-center text-xs text-brand-500 mt-1 flex items-center justify-center gap-1 transition-all"><i class="ri-file-copy-line"></i> 点击复制地址</div>
-                                    </div>
-                                </div>
-                            `;
+                        await this.loadOrders();
+                        const newOrder = this.myOrders.find(o => o.order_id === res.data.orderId);
+                        if (newOrder) {
+                            this.showPaymentInfo(newOrder);
                         } else {
-                            htmlContent = `
-                                <div class="flex flex-col items-center pt-2">
-                                    <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3"><i class="ri-check-line text-4xl text-emerald-500"></i></div>
-                                    <h3 class="text-2xl font-bold text-slate-800 mb-1">充值提交成功</h3>
-                                    <div class="text-sm text-slate-500 mb-4">单号: <span class="font-mono font-bold text-slate-700">${res.data.orderId}</span></div>
-                                    <div class="mb-4"><span class="text-sm text-slate-500">需支付:</span><span class="text-2xl font-bold text-brand-600 ml-1">¥${res.data.cnyAmount}</span></div>
-                                    <div class="w-full bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-700 leading-relaxed font-medium"><i class="ri-information-fill"></i> 请联系客服获取收款码，并发送充值单号核实。</div>
-                                </div>
-                            `;
+                            this.showPaymentInfo({
+                                order_id: res.data.orderId,
+                                usdt_amount: res.data.usdtAmount,
+                                cny_amount: res.data.cnyAmount,
+                                payment_method: this.rechargeForm.method,
+                                product_name: '余额充值',
+                                qrcode_url: null,
+                                expires_at: null,
+                                wallet: res.data.wallet
+                            });
                         }
-                        Swal.fire({
-                            html: htmlContent,
-                            showConfirmButton: true,
-                            confirmButtonText: '确定',
-                            buttonsStyling: false,
-                            customClass: {
-                        popup: 'rounded-3xl p-2 shadow-2xl',
-                        confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mt-4 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
-                    }
-                        });
                         this.loadUserBalance();
                     } else {
                         Swal.fire('充值失败', res.data.msg, 'error');
