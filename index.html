@@ -1396,11 +1396,11 @@
                             </div>
                             <div @click="buyForm.method = 'WeChat'" :class="buyForm.method === 'WeChat' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
                                 <i class="ri-wechat-pay-line text-2xl" :class="buyForm.method==='WeChat'?'text-brand-600':'text-slate-400'"></i>
-                                <div><div class="text-sm font-bold">微信支付</div><div class="text-[10px] opacity-70">人工核实到账</div></div>
+                                <div><div class="text-sm font-bold">微信支付</div><div class="text-[10px] opacity-70">自动回调</div></div>
                             </div>
                             <div @click="buyForm.method = 'Alipay'" :class="buyForm.method === 'Alipay' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
                                 <i class="ri-alipay-line text-2xl" :class="buyForm.method==='Alipay'?'text-brand-600':'text-slate-400'"></i>
-                                <div><div class="text-sm font-bold">支付宝</div><div class="text-[10px] opacity-70">人工核实到账</div></div>
+                                <div><div class="text-sm font-bold">支付宝</div><div class="text-[10px] opacity-70">到账快 / 推荐</div></div>
                             </div>
                         </div>
                     </div>
@@ -1519,15 +1519,15 @@
                         <div class="grid grid-cols-3 gap-3">
                             <div @click="rechargeForm.method = 'USDT'"   :class="rechargeForm.method === 'USDT'   ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
                                 <i class="ri-money-dollar-circle-line text-2xl" :class="rechargeForm.method==='USDT'?'text-brand-600':'text-slate-400'"></i>
-                                <div><div class="text-sm font-bold">USDT</div><div class="text-[10px] opacity-70">自动到账</div></div>
+                                <div><div class="text-sm font-bold">USDT</div><div class="text-[10px] opacity-70">到账快 / 推荐</div></div>
                             </div>
                             <div @click="rechargeForm.method = 'WeChat'" :class="rechargeForm.method === 'WeChat' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
                                 <i class="ri-wechat-pay-line text-2xl" :class="rechargeForm.method==='WeChat'?'text-brand-600':'text-slate-400'"></i>
-                                <div><div class="text-sm font-bold">微信</div><div class="text-[10px] opacity-70">人工核实到账</div></div>
+                                <div><div class="text-sm font-bold">微信</div><div class="text-[10px] opacity-70">自动回调</div></div>
                             </div>
                             <div @click="rechargeForm.method = 'Alipay'" :class="rechargeForm.method === 'Alipay' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
                                 <i class="ri-alipay-line text-2xl" :class="rechargeForm.method==='Alipay'?'text-brand-600':'text-slate-400'"></i>
-                                <div><div class="text-sm font-bold">支付宝</div><div class="text-[10px] opacity-70">人工核实到账</div></div>
+                                <div><div class="text-sm font-bold">支付宝</div><div class="text-[10px] opacity-70">到账快 / 推荐</div></div>
                             </div>
                         </div>
                     </div>
@@ -3224,7 +3224,7 @@ if (order.qrcode_url) {
                     else if (order.payment_method === 'Alipay') payMethodText = '请使用支付宝扫码支付';
                     let timerInterval;
                     Swal.fire({
-                        title: '客服已上传收款码',
+                        title: '已上传收款码',
                         buttonsStyling: false,
                         customClass: {
                             popup: 'rounded-2xl',
