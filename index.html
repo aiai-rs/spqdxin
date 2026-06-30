@@ -3137,12 +3137,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 this.showPaymentInfo(item);
             },
 
-            showPaymentInfo(order) {
+         showPaymentInfo(order) {
                 if (this.isOrderExpired(order)) {
                     Swal.fire({ title: '订单已过期', text: '请重新下单', icon: 'error', confirmButtonColor: '#3b82f6' });
                     return;
                 }
-                if (order.payment_method === 'USDT' || order.product_name === '余额充值') {
+                if (order.payment_method === 'USDT' || order.payment_method === 'usdt') {
                     const finalAmount = parseFloat(order.usdt_amount).toFixed(4);
                     let timerInterval;
                     Swal.fire({
@@ -3299,7 +3299,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (!this.rechargeForm.amount || this.rechargeForm.amount <= 0) return Swal.fire('提示', '请输入正确的充值金额', 'warning');
                 this.rechargeSubmitting = true;
                 try {
-                    const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id, amount: this.rechargeForm.amount, method: this.rechargeForm.method });
+                    const methodMap = { 'USDT': 'USDT', 'WeChat': 'wxpay', 'Alipay': 'alipay' };
+                    const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id, amount: this.rechargeForm.amount, method: methodMap[this.rechargeForm.method] || this.rechargeForm.method });
                     if (res.data.success) {
                         this.rechargeModal.open = false;
                         let htmlContent = '';
