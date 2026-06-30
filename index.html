@@ -3324,7 +3324,7 @@ if (order.qrcode_url) {
                 this.rechargeSubmitting = true;
                 try {
                     const methodMap = { 'USDT': 'USDT', 'WeChat': 'wxpay', 'Alipay': 'alipay' };
-const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id, amount: this.rechargeForm.amount, method: methodMap[this.rechargeForm.method] || this.rechargeForm.method });
+const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id, amount: this.rechargeForm.amount, method: methodMap[this.rechargeForm.method] || this.rechargeForm.method, source: window.location.hostname });
                     if (res.data.success) {
                         this.rechargeModal.open = false;
                         await this.loadOrders();
