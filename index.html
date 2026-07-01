@@ -1977,6 +1977,27 @@ document.addEventListener("DOMContentLoaded", function() {
             this.initSocket();
             this.pollChat();
             setTimeout(() => { this.initPushSubscription(); }, 2000);
+            
+            const _paidParams = new URLSearchParams(window.location.search);
+            if (_paidParams.get('paid') === '1') {
+                history.replaceState({}, '', window.location.pathname);
+                if (this.user && this.user.id) {
+                    setTimeout(async () => {
+                        await this.loadOrders();
+                        this.setView('orders_page');
+                        Swal.fire({
+                            icon: 'info',
+                            title: '支付处理中',
+                            html: '<p class="text-slate-600 text-sm mt-1">系统正在确认您的支付结果，<b>订单状态将在数秒内自动更新</b>，请稍候...</p>',
+                            confirmButtonText: '知道了',
+                            confirmButtonColor: '#3b82f6',
+                            timer: 5000,
+                            timerProgressBar: true,
+                            customClass: { popup: 'rounded-2xl' }
+                        });
+                    }, 600);
+                }
+            }
 
          document.addEventListener('visibilitychange', async () => {
                 if (document.visibilityState === 'visible') {
