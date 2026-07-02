@@ -2427,11 +2427,13 @@ document.addEventListener("DOMContentLoaded", function() {
             Swal.fire({
                 icon: 'success',
                 title: '支付成功',
-                text: '您的订单已到账！',
+                text: '您的订单已到账！即将自动刷新...',
                 timer: 2000,
                 showConfirmButton: false
             });
-            // 支付成功后引导安装 APP（仅非 PWA 模式）
+            setTimeout(() => {
+                window.location.replace(window.location.origin + '/?paid=1');
+            }, 2000);
             if (!window.matchMedia('(display-mode: standalone)').matches && !window.navigator.standalone) {
                 setTimeout(() => { this.showAddToHomeGuide('purchase'); }, 180000);
             }
@@ -2652,7 +2654,25 @@ document.addEventListener("DOMContentLoaded", function() {
             async loadOrders() {
                 try {
                     const res = await axios.get(`${API_BASE}/api/order?userId=${this.user.id}`);
-                    this.myOrders = res.data || [];
+                    const newOrders = res.data || [];
+                    const payingOrderId = sessionStorage.getItem('paying_order_id');
+                    if (payingOrderId) {
+                        const targetOrder = newOrders.find(o => o.order_id === payingOrderId);
+                        if (targetOrder && targetOrder.status === '已支付') {
+                            sessionStorage.removeItem('paying_order_id');
+                            Swal.fire({
+                                icon: 'success',
+                                title: '支付成功',
+                                text: '您的订单已到账！即将自动刷新...',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            setTimeout(() => {
+                                window.location.replace(window.location.origin + '/?paid=1');
+                            }, 2000);
+                        }
+                    }
+                    this.myOrders = newOrders;
                     this.startOrderTimers();
                     this.checkQRCodes();
                 } catch (e) { console.error("加载订单失败", e); }
@@ -2660,7 +2680,23 @@ document.addEventListener("DOMContentLoaded", function() {
        async checkPendingQROrders() {
                 try {
                     const res = await axios.get(`${API_BASE}/api/order?userId=${this.user.id}`);
-                    this.myOrders = res.data || [];
+                    const newOrders = res.data || [];
+                    newOrders.forEach(newOrder => {
+                        const oldOrder = this.myOrders.find(o => o.order_id === newOrder.order_id);
+                        if (oldOrder && oldOrder.status !== '已支付' && newOrder.status === '已支付') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '支付成功',
+                                text: '您的订单已到账！即将自动刷新...',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            setTimeout(() => {
+                                window.location.replace(window.location.origin + '/?paid=1');
+                            }, 2000);
+                        }
+                    });
+                    this.myOrders = newOrders;
                     this.myOrders.forEach(order => {
                         if (order.status === '待支付' && order.qrcode_url && !this.notifiedQRCodes.includes(order.order_id) && !this.isOrderExpired(order)) {
                             this.notifiedQRCodes.push(order.order_id);
@@ -3287,13 +3323,16 @@ if (order.qrcode_url) {
                                 const distance = expires - now;
                                 if (distance < 0) { clearInterval(timerInterval); if (timerDisplay) timerDisplay.textContent = "已过期"; Swal.close(); }
                                 else {
-                                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                   const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                                     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
                                     if (timerDisplay) timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                                 }
                             }, 1000);
                             const goPayBtn = document.getElementById('go-pay-btn');
-                            if (goPayBtn) goPayBtn.addEventListener('click', () => { window.location.href = order.qrcode_url; });
+                            if (goPayBtn) goPayBtn.addEventListener('click', () => { 
+                                sessionStorage.setItem('paying_order_id', order.order_id);
+                                window.open(order.qrcode_url, '_blank'); 
+                            });
                         },
                         willClose: () => { clearInterval(timerInterval); }
                     }).then((result) => {
