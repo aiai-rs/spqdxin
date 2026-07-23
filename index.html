@@ -26,10 +26,14 @@
 
         /* ── Base ── */
         html, body {
-            /* [MERGE] Was declared in two separate places; unified here */
             overflow-x: hidden !important;
             width: 100%;
             max-width: 100vw;
+        }
+
+        html {
+            min-height: 100%;
+            scroll-behavior: smooth;
         }
 
         body {
@@ -37,8 +41,11 @@
             background-color: #f8fafc;
             color: #334155;
             -webkit-tap-highlight-color: transparent;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
-          [v-cloak] > *:not(#app-loading) {
+
+        [v-cloak] > *:not(#app-loading) {
             display: none !important;
         }
 
@@ -75,12 +82,36 @@
         /* ── Buttons & Gradients ── */
         .btn-gradient {
             background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
-            transition: all 0.3s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
         }
-        .btn-gradient:hover {
-            opacity: 0.9;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-            transform: translateY(-1px);
+
+        button,
+        [role="button"] {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:focus-visible,
+        [role="button"]:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.28);
+            outline-offset: 2px;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        @media (hover: hover) {
+            .btn-gradient:hover {
+                opacity: 0.94;
+                box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+                transform: translateY(-1px);
+            }
         }
 
         /* ── Scrollbar hide ── */
@@ -90,16 +121,16 @@
             scrollbar-width: none;
         }
 
-        /* [新增] 全局隐藏滚动条 */
         ::-webkit-scrollbar {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-            background: transparent !important;
+            width: 8px;
+            height: 8px;
         }
-        html, body, div, section, main, ul, li {
-            scrollbar-width: none !important;
-            -ms-overflow-style: none !important;
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border: 2px solid transparent;
+            border-radius: 999px;
+            background-clip: padding-box;
         }
 
         /* ── Marquee ── */
@@ -118,6 +149,66 @@
         .nav-item {
             position: relative;
             white-space: nowrap;
+        }
+
+        .app-main {
+            padding-top: calc(5rem + env(safe-area-inset-top));
+            padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
+        }
+
+        .topbar-action {
+            min-width: 40px;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        .announcement-bar {
+            min-height: 46px;
+        }
+
+        .announcement-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .product-toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+            gap: 14px 20px;
+            align-items: center;
+        }
+
+        .product-toolbar-title {
+            min-width: 0;
+        }
+
+        .product-search {
+            width: 100%;
+        }
+
+        .category-strip {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .category-chip {
+            min-height: 40px;
+            flex: 0 0 auto;
+        }
+
+        .subcategory-panel {
+            grid-column: 1 / -1;
+        }
+
+        #mobile-bottom-nav {
+            bottom: max(1rem, env(safe-area-inset-bottom)) !important;
         }
 
         /* ── Typography helpers ── */
@@ -296,17 +387,31 @@
         /* [MERGE] The two duplicate @media (max-width: 640px) blocks have
            been merged into a single block here. */
         @media (max-width: 640px) {
-    html { font-size: 14px; }
-    .product-grid { gap: 10px !important; }
-    .p-4 { padding: 1rem !important; }
-    .product-grid { grid-template-columns: repeat(2, 1fr) !important; }
-    
-    /* 修复手机端分类与商品间距过远 */
-    .product-header {
-        margin-bottom: 0.25rem !important;
-        gap: 0.125rem !important;
-    }
-}
+            html { font-size: 14px; }
+            /* 所有手机宽度始终一行两个商品 */
+            .product-grid {
+                gap: 10px !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+            .product-header { margin-bottom: 1rem !important; }
+            .product-toolbar {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            .category-strip {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                scroll-snap-type: x proximity;
+                margin-inline: -1rem;
+                padding: 2px 1rem 8px;
+                scrollbar-width: none;
+            }
+            .category-strip::-webkit-scrollbar { display: none; }
+            .category-chip { scroll-snap-align: start; }
+        }
+
 
         @media (max-height: 600px) {
             #mobile-bottom-nav {
@@ -338,9 +443,8 @@
 
             body:has(#hire-chat-container), body:has(.chat-window) {
                 overflow: hidden !important;
-                position: fixed;
                 width: 100%;
-                height: 100%;
+                height: 100dvh;
             }
 
             body:has(#hire-chat-container) footer,
@@ -359,7 +463,8 @@
                 transform: none !important;
                 width: 100% !important;
                 max-width: 100% !important;
-                height: 100% !important;
+                height: 100vh !important;
+                height: 100dvh !important;
                 border-radius: 0 !important;
                 border: none !important;
                 z-index: 99999 !important;
@@ -371,7 +476,8 @@
                 left: 0 !important;
                 right: 0 !important;
                 bottom: 0 !important;
-                height: 100% !important;
+                height: 100vh !important;
+                height: 100dvh !important;
                 z-index: 99999 !important;
                 margin: 0 !important;
                 max-width: none !important;
@@ -428,18 +534,18 @@
     <nav class="fixed top-0 w-full z-50 bg-white/95 border-b border-slate-200 shadow-sm" style="padding-top: env(safe-area-inset-top);">
         <div class="h-[env(safe-area-inset-top)] w-full bg-white"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 gap-4">
+            <div class="flex items-center justify-between h-16 gap-2 sm:gap-4">
 
                 <!-- Logo -->
-                <div class="flex items-center gap-3 cursor-pointer flex-shrink-0" @click="setView('home')">
+                <div class="flex items-center gap-2 sm:gap-3 cursor-pointer flex-shrink min-w-0" @click="setView('home')" role="button" tabindex="0" @keydown.enter="setView('home')">
                     <div class="relative group">
                         <div class="w-11 h-11 rounded-full bg-black flex items-center justify-center text-[#00ff41] shadow-[0_0_15px_rgba(0,255,65,0.4)] border border-[#00ff41]/60 transition-all duration-300 group-hover:scale-110">
                             <i class="ri-spy-fill text-2xl"></i>
                         </div>
                         <div class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
                     </div>
-                   <div class="flex flex-col justify-center">
-                        <span class="font-black text-lg leading-none text-slate-900 font-mono tracking-tighter" style="font-family: 'Courier New', monospace;" v-text="brandName">
+                   <div class="flex flex-col justify-center min-w-0">
+                        <span class="font-black text-base sm:text-lg leading-none text-slate-900 font-mono tracking-tighter truncate" style="font-family: 'Courier New', monospace;" v-text="brandName">
                         </span>
                         <span class="mt-1 inline-block bg-slate-900 text-[#00ff42] text-[10px] font-bold px-1 rounded leading-tight tracking-wider font-mono w-max">
                             {{ siteConfig.domainText }}
@@ -450,8 +556,8 @@
                 <!-- Desktop Nav Links -->
                 <div class="hidden md:flex flex-1 overflow-x-auto scrollbar-hide items-center gap-6 px-2 nav-container">
                     <div class="flex items-center gap-6 nav-items">
-                        <a @click="setView('home')"                  :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='home' && filterCat==='all' ? 'active' : 'text-slate-600']">首页</a>
-                        <a @click="setView('products')"              :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='home' && filterCat!=='all' ? 'active' : 'text-slate-600']">商品</a>
+                        <a @click="setView('home')"                  :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='home' && homeSection==='home' ? 'active' : 'text-slate-600']">首页</a>
+                        <a @click="setView('products')"              :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='home' && homeSection==='products' ? 'active' : 'text-slate-600']">商品</a>
                         <a @click="checkLoginAndGo('orders_page')"   :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='orders_page' ? 'active' : 'text-slate-600']">订单</a>
                         <a @click="setView('hiring')"                :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='hiring' ? 'active' : 'text-slate-600']">招聘</a>
                         <a @click="checkLoginAndGo('profile')"       :class="['nav-item cursor-pointer text-sm font-medium transition hover:text-brand-500 flex-shrink-0', view==='profile' ? 'active' : 'text-slate-600']">个人中心</a>
@@ -462,15 +568,15 @@
                 <div class="flex items-center gap-3 flex-shrink-0">
                     <!-- Cart -->
                     <div class="relative" v-if="user.id">
-                        <button @click="viewCart" class="text-slate-600 hover:text-brand-500 transition relative">
+                        <button type="button" @click="viewCart" class="topbar-action text-slate-600 hover:text-brand-500 transition relative" aria-label="打开购物车">
                             <i class="ri-shopping-cart-2-line text-xl"></i>
                             <span v-if="cartItems.length > 0" class="cart-badge">{{ cartItems.length }}</span>
                         </button>
                     </div>
 
                     <template v-if="!user.id">
-                        <button @click="openAuth('login')"    class="px-3 sm:px-5 py-1.5 text-xs sm:text-sm font-medium text-brand-500 border border-brand-500 rounded-md hover:bg-brand-50 transition flex items-center gap-1 whitespace-nowrap">登录</button>
-                        <button @click="openAuth('register')" class="btn-gradient px-3 sm:px-5 py-1.5 text-xs sm:text-sm font-medium text-white rounded-md shadow-lg shadow-brand-500/30 flex items-center gap-1 whitespace-nowrap">注册</button>
+                        <button type="button" @click="openAuth('login')" class="min-h-10 px-3 sm:px-5 text-xs sm:text-sm font-medium text-brand-500 border border-brand-500 rounded-xl hover:bg-brand-50 transition flex items-center gap-1 whitespace-nowrap">登录</button>
+                        <button type="button" @click="openAuth('register')" class="btn-gradient min-h-10 px-3 sm:px-5 text-xs sm:text-sm font-medium text-white rounded-xl shadow-lg shadow-brand-500/30 flex items-center gap-1 whitespace-nowrap">注册</button>
                     </template>
                     <template v-else>
                         <div class="flex items-center gap-2 bg-slate-100 rounded-full pl-1 pr-3 py-1 cursor-pointer hover:bg-slate-200 transition" @click="setView('profile')">
@@ -479,7 +585,7 @@
                             </div>
                             <span class="text-xs sm:text-sm font-medium text-slate-700 truncate max-w-[60px] sm:max-w-[80px]">{{ user.contact }}</span>
                         </div>
-                        <button @click="logout" class="text-slate-400 hover:text-red-500 transition" title="退出">
+                        <button type="button" @click="logout" class="topbar-action text-slate-400 hover:text-red-500 transition" title="退出" aria-label="退出登录">
                             <i class="ri-logout-circle-r-line text-lg sm:text-xl"></i>
                         </button>
                     </template>
@@ -490,25 +596,21 @@
     </nav>
 
     <!-- ── Main Content ── -->
-    <main class="flex-grow pt-20 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+    <main class="app-main flex-grow px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
 
         <!-- ── Home Banner ── -->
         <div v-if="view === 'home'" class="mb-5 animate-fade-in-up">
             <div class="bg-gradient-to-r from-blue-50 via-white to-indigo-50 rounded-2xl p-5 shadow-sm border border-brand-100/60 relative overflow-hidden">
                 <div class="relative z-10">
                     <!-- Announcement Marquee -->
-                   <div v-if="settings.announcement" @click="showAnnouncement" class="cursor-pointer active:scale-[0.98] transition-transform flex items-center gap-3 mb-5 bg-gradient-to-r from-white via-blue-50/30 to-white p-2.5 rounded-xl border border-blue-100/80 shadow-[0_2px_10px_rgba(59,130,246,0.05)] overflow-hidden relative">
-                        <div class="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-red-400 to-rose-500 text-white flex-shrink-0 z-10 shadow-md shadow-red-500/30 animate-bounce">
+                   <button v-if="settings.announcement" type="button" @click="showAnnouncement"
+                        class="announcement-bar w-full cursor-pointer active:scale-[0.99] transition-transform flex items-center gap-3 mb-5 bg-gradient-to-r from-white via-blue-50/30 to-white px-3 py-2.5 rounded-xl border border-blue-100/80 shadow-[0_2px_10px_rgba(59,130,246,0.05)] overflow-hidden text-left">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-rose-500 text-white flex-shrink-0 shadow-md shadow-red-500/30">
                             <i class="ri-notification-3-fill text-sm"></i>
                         </div>
-                        <div class="flex-1 overflow-hidden relative">
-                            <div class="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-white to-transparent z-10"></div>
-                            <div class="animate-marquee whitespace-nowrap text-[13px] font-bold text-slate-700 tracking-wide">
-                                {{ settings.announcement }}
-                            </div>
-                            <div class="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white to-transparent z-10"></div>
-                        </div>
-                    </div>
+                        <span class="announcement-text flex-1 text-[13px] font-bold text-slate-700 tracking-wide">{{ settings.announcement }}</span>
+                        <i class="ri-arrow-right-s-line text-lg text-slate-400 flex-shrink-0" aria-hidden="true"></i>
+                    </button>
 
                     <div class="text-center space-y-3 py-2">
                         <div class="flex items-center justify-center gap-2 mb-1">
@@ -529,31 +631,32 @@
         </div>
 
         <!-- ── Home Products ── -->
-        <div v-if="view === 'home'" class="animate-fade-in">
-                        <div class="flex flex-col md:flex-row justify-between items-center gap-1 md:gap-3 mb-6 md:mb-8 product-header">
-    <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight self-start md:self-center">
-        {{ filterCat === 'all' ? '全部商品' : filterCat }}
-    </h2>
-    <div class="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto mt-3">
-                        <div class="relative group">
-                            <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition"></i>
-                            <input v-model="searchQuery" type="text" placeholder="搜索商品..." class="w-full md:w-64 bg-white border border-slate-200 rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-50 transition shadow-sm">
-                        </div>
-                        <div class="flex flex-col gap-2">
-                        <div class="flex flex-wrap gap-3 w-full md:w-auto">
-                            <button @click="filterCat = 'all', filterSubCat = 'all'"
+        <div v-if="view === 'home'" id="products-section" class="animate-fade-in scroll-mt-24">
+            <div class="product-toolbar product-header mb-6 md:mb-8">
+                <div class="product-toolbar-title">
+                    <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">
+                        {{ filterCat === 'all' ? '全部商品' : filterCat }}
+                    </h2>
+                    <p class="mt-1 text-xs text-slate-400">共 {{ filteredProducts.length }} 件商品</p>
+                </div>
+                <div class="relative group product-search">
+                    <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition"></i>
+                    <input v-model.trim="searchQuery" type="search" placeholder="搜索商品..." class="w-full bg-white border border-slate-200 rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-50 transition shadow-sm">
+                </div>
+                <div class="category-strip">
+                            <button type="button" @click="selectCategory('all')"
                                 :class="[filterCat === 'all' ? 'btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50' : 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300']"
-                                class="px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95">
+                                class="category-chip px-5 py-2 rounded-full text-xs font-bold transition-all duration-200 active:scale-95">
                                 全部
                             </button>
-                            <button v-for="cat in categories" :key="cat.main" @click="filterCat = cat.main, filterSubCat = 'all'"
+                            <button type="button" v-for="cat in categories" :key="cat.main" @click="selectCategory(cat.main)"
                                 :class="[filterCat === cat.main ? 'btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50' : 'bg-white text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300']"
-                                class="px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95">
+                                class="category-chip px-5 py-2 rounded-full text-xs font-bold transition-all duration-200 active:scale-95">
                                 {{ cat.main }}
                             </button>
-                        </div>
-                        <div v-if="filterCat !== 'all' && activeSubCategories.length > 0" 
-                             class="mt-2 p-3 bg-slate-100/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 animate-fade-in-up relative">
+                </div>
+                <div v-if="filterCat !== 'all' && activeSubCategories.length > 0"
+                             class="subcategory-panel p-3 bg-slate-100/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 animate-fade-in-up relative">
                             <div class="absolute -top-2 left-10 w-4 h-4 bg-slate-100/80 border-l border-t border-slate-200/50 rotate-45"></div>
                             
                             <div class="flex items-center gap-2 mb-2 px-1">
@@ -562,20 +665,18 @@
                             </div>
 
                             <div class="flex flex-wrap gap-2">
-                                <button @click="filterSubCat = 'all'"
+                                <button type="button" @click="filterSubCat = 'all'"
                                     :class="[filterSubCat === 'all' ? 'bg-brand-500 text-white shadow-sm' : 'bg-white text-slate-500 border border-slate-200 hover:border-brand-300']"
                                     class="px-4 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-200 active:scale-95">
                                     全部展示
                                 </button>
-                                <button v-for="sub in activeSubCategories" :key="sub" @click="filterSubCat = sub"
+                                <button type="button" v-for="sub in activeSubCategories" :key="sub" @click="filterSubCat = sub"
                                     :class="[filterSubCat === sub ? 'bg-brand-500 text-white shadow-sm' : 'bg-white text-slate-500 border border-slate-200 hover:border-brand-300']"
                                     class="px-4 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-200 active:scale-95">
                                     {{ sub }}
                                 </button>
                             </div>
-                        </div>
-                    </div>
-                </div>
+                </div>
             </div>
 
             <!-- Loading Skeleton -->
@@ -588,7 +689,7 @@
             </div>
 
             <!-- Product Grid -->
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 product-grid">
+            <div v-else class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 product-grid">
                 <div v-for="prod in filteredProducts" :key="prod.id" @click="openProductDetail(prod)"
                     class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-tech-hover transition-all duration-300 group cursor-pointer border border-slate-100 flex flex-col h-full relative">
                     <div class="absolute top-3 right-3 z-10 flex flex-col gap-1 items-end">
@@ -689,7 +790,7 @@
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-3 pt-2">
-                            <a :href="'https://t.me/' + siteConfig.contactId" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
+                            <a :href="'https://t.me/' + siteConfig.contactId" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
                                 <i class="ri-telegram-fill text-[#0088cc] text-lg"></i> 联系{{ siteConfig.bossName }}
                             </a>
                             <a @click="openHireChat" class="cursor-pointer flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm relative overflow-hidden">
@@ -732,7 +833,7 @@
                             </div>
                         </div>
                         <div v-if="job.contact" class="flex items-center gap-3 pt-2">
-                            <a :href="getTelegramLink(job.contact)" target="_blank" class="flex-1 btn-gradient text-white text-sm font-bold py-3 rounded-xl shadow-lg shadow-brand-500/20 hover:-translate-y-0.5 transition flex items-center justify-center gap-2">
+                            <a :href="getTelegramLink(job.contact)" target="_blank" rel="noopener noreferrer" class="flex-1 btn-gradient text-white text-sm font-bold py-3 rounded-xl shadow-lg shadow-brand-500/20 hover:-translate-y-0.5 transition flex items-center justify-center gap-2">
                                 <i class="ri-send-plane-fill"></i> 立即沟通
                             </a>
                             <div class="px-4 py-3 bg-slate-50 text-slate-500 rounded-xl text-xs font-mono font-medium border border-slate-100 select-all">
@@ -972,8 +1073,8 @@
                                     <button v-if="order.status === '待支付' && !isOrderExpired(order)" @click.stop="showPaymentInfo(order)" class="btn-gradient px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-500/30 hover:-translate-y-0.5 transition flex items-center justify-center gap-1 active:scale-95">
                                         {{ (order.payment_method === 'USDT' || order.payment_method === 'usdt') ? '查看详情 / 上传凭证' : '去支付 / 上传凭证' }} <i class="ri-secure-payment-line"></i>
                                     </button>
-                                    <button v-if="order.status === '待核实'" class="px-4 py-2.5 text-brand-600 bg-brand-50 text-xs font-bold rounded-xl cursor-default border border-brand-100">
-                                        <i class="ri-time-line"></i> 凭证核实中
+                                    <button v-if="['待审核', '待核实'].includes(order.status)" type="button" disabled class="px-4 py-2.5 text-brand-600 bg-brand-50 text-xs font-bold rounded-xl cursor-default border border-brand-100">
+                                        <i class="ri-time-line"></i> 凭证审核中
                                     </button>
                                     <button v-if="order.status === '已支付' || order.status === '已发货'" @click.stop="toggleChat" class="px-4 py-2.5 text-emerald-600 bg-emerald-50 text-xs font-bold rounded-xl hover:bg-emerald-100 transition border border-emerald-100">
                                         <i class="ri-customer-service-2-line"></i> 联系售后
@@ -1086,8 +1187,8 @@
                 <span v-if="hrUnreadMessages > 0" class="absolute top-1 right-3 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                 <span class="text-[10px] font-medium tracking-tight">招聘</span>
             </div>
-            <div @click="checkLoginAndGo('profile')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90" :class="view==='profile' && profileTab!=='orders' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
-                <i class="text-[24px] mb-0.5" :class="view==='profile' && profileTab!=='orders' ? 'ri-user-3-fill' : 'ri-user-3-line'"></i>
+            <div @click="checkLoginAndGo('profile')" class="flex flex-col items-center justify-center w-16 h-full cursor-pointer transition-transform duration-200 active:scale-90" :class="view==='profile' ? 'text-[#007aff]' : 'text-[#8e8e93]'">
+                <i class="text-[24px] mb-0.5" :class="view==='profile' ? 'ri-user-3-fill' : 'ri-user-3-line'"></i>
                 <span class="text-[10px] font-medium tracking-tight">我的</span>
             </div>
         </div>
@@ -1589,7 +1690,7 @@
                         </div>
                     </div>
                     <div class="bg-yellow-50 border border-yellow-100 p-3 rounded-lg">
-                        <div class="text-xs text-yellow-700"><i class="ri-alert-line"></i> 提现申请提交后，客服稍后会处理。最小提现金额为1 USDT，手续费为1 USDT。</div>
+                        <div class="text-xs text-yellow-700"><i class="ri-alert-line"></i> 提现申请提交后由客服处理；最低 5 USDT。USDT 提现免手续费，其他方式按上方费率计算。</div>
                     </div>
                     <button @click="submitWithdraw" :disabled="withdrawSubmitting || withdrawForm.amount > (user.balance || 0)" class="w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 disabled:opacity-50 flex justify-center text-sm tracking-wide">
                         <span v-if="withdrawSubmitting" class="animate-spin mr-2"><i class="ri-loader-4-line"></i></span>
@@ -1750,9 +1851,36 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
 
+    const escapeHTML = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    const normalizeHttpUrl = (value) => {
+        try {
+            const url = new URL(String(value || ''), window.location.origin);
+            return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+        } catch (_) {
+            return '';
+        }
+    };
+
+    axios.interceptors.request.use(config => {
+        const currentUser = safeJSONParse(localStorage.getItem('nexus_user'), {});
+        if (currentUser.token) {
+            config.headers = config.headers || {};
+            config.headers['x-user-token'] = currentUser.token;
+        }
+        return config;
+    });
+
+    let authExpiryHandled = false;
     // 全局拦截器处理 401 Token 过期
     axios.interceptors.response.use(response => response, error => {
-        if (error.response && error.response.status === 401) {
+        if (error.response && error.response.status === 401 && !authExpiryHandled) {
+            authExpiryHandled = true;
             localStorage.removeItem('nexus_user');
             localStorage.removeItem('adminToken');
             Swal.fire({
@@ -1782,6 +1910,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 },
 
                 view: 'home',
+                homeSection: 'home',
                 profileTab: 'orders',
                 user: safeJSONParse(localStorage.getItem('nexus_user'), {}),
                 products: [],
@@ -1789,13 +1918,17 @@ document.addEventListener("DOMContentLoaded", function() {
                 hiringList: [],
                 myOrders: [],
                 settings: { rate: 7.0, feeRate: 0, announcement: '', showPopup: false },
+                announcementPopupOpen: false,
+                announcementPopupShown: false,
+                hasLoadedInitialData: false,
+                publicDataRefreshInFlight: null,
 
                 isMounted: false,
                 loading: true,
                 searchQuery: '',
-                filterCat: 'all',
-                filterSubCat: 'all',
-                mobileMenuOpen: false,
+                filterCat: 'all',
+                filterSubCat: 'all',
+                mobileMenuOpen: false,
 
                 // Invite
                 inviteModal: { open: false, list: [], totalEarned: 0, loading: false },
@@ -1822,6 +1955,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 chatMessages: [],
                 activeChatType: 'cs',
                 chatPollTimer: null,
+                chatPollInFlight: null,
                 chatSubmitting: false,
                 chatSessionId: localStorage.getItem('chat_session_id') || 'guest_' + Date.now(),
                 unreadMessages: 0,
@@ -1845,7 +1979,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 recordModal: { open: false, title: '', list: [], loading: false, type: '' },
 
                 // Payment Proof
-                paymentProofModal: { open: false, orderId: '', proofUrl: '' },
+                paymentProofModal: { open: false, orderId: '', proofUrl: '', file: null },
                 paymentProofSubmitting: false,
 
                 // Security
@@ -1867,24 +2001,27 @@ document.addEventListener("DOMContentLoaded", function() {
                 socket: null,
                 newMessagesWhileHidden: false,
                 newHrMessagesWhileHidden: false,
+                visibilityHandler: null,
+                onlineHandler: null,
+                pageShowHandler: null,
             };
         },
 
         computed: {
-            activeSubCategories() {
-                if (this.filterCat === 'all') return [];
-                const catObj = this.categories.find(c => c.main === this.filterCat);
-                return catObj ? catObj.subs : [];
-            },
-            filteredProducts() {
-                let list = this.products.filter(p => {
-                    const matchesSearch = !this.searchQuery ||
-                        p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                        (p.description || '').toLowerCase().includes(this.searchQuery.toLowerCase());
-                    const matchesCat = this.filterCat === 'all' || p.category === this.filterCat;
-                    const matchesSubCat = this.filterSubCat === 'all' || p.sub_category === this.filterSubCat;
-                    return matchesSearch && matchesCat && matchesSubCat;
-                });
+            activeSubCategories() {
+                if (this.filterCat === 'all') return [];
+                const catObj = this.categories.find(c => c.main === this.filterCat);
+                return catObj ? catObj.subs : [];
+            },
+            filteredProducts() {
+                let list = this.products.filter(p => {
+                    const matchesSearch = !this.searchQuery ||
+                        p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                        (p.description || '').toLowerCase().includes(this.searchQuery.toLowerCase());
+                    const matchesCat = this.filterCat === 'all' || p.category === this.filterCat;
+                    const matchesSubCat = this.filterSubCat === 'all' || p.sub_category === this.filterSubCat;
+                    return matchesSearch && matchesCat && matchesSubCat;
+                });
                 return list.sort((a, b) => {
                     const pinA = a.is_pinned ? 1 : 0;
                     const pinB = b.is_pinned ? 1 : 0;
@@ -1952,7 +2089,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 this.siteConfig = { domainText: 'XAW888.COM',  bossName: 'Boss',  contactId: 'rrii8', bossTitle: 'Boss'  };
             }
             this.initData();
-            axios.post(`${API_BASE}/api/public/visit`, { domain: window.location.hostname });
+            axios.post(`${API_BASE}/api/public/visit`, { domain: window.location.hostname }).catch(() => {});
         },
 
        mounted() {
@@ -1999,28 +2136,19 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             }
 
-         document.addEventListener('visibilitychange', async () => {
-                if (document.visibilityState === 'visible') {
-                    const diff = await this.pollChat();
-                    if (this.user && this.user.id) {
-                        this.checkPendingQROrders();
-                    }
-                    if (diff.csCount > 0 && !this.chatOpen) {
-                        this.unreadMessages += diff.csCount;
-                        const last = [...this.csMessages].reverse().find(m => m.sender === 'admin');
-                        if (last) this.showChatNotification(last.msg_type === 'image' ? '[图片]' : last.content, '客服发来新消息');
-                        this.messageSound.play().catch(() => {});
-                    }
-                   if (diff.hrCount > 0 && this.view !== 'hire_chat') {
-                        this.hrUnreadMessages += diff.hrCount;
-                        const lastHr = [...this.hrMessages].reverse().find(m => m.sender === 'admin');
-                        if (lastHr) this.showChatNotification(lastHr.msg_type === 'image' ? '[图片]' : lastHr.content, 'HR助理发来新消息');
-                        this.messageSound.play().catch(() => {});
-                    }
-                    if (diff.csCount > 0 && this.chatOpen) this.markChatAsRead('cs');
-                    if (diff.hrCount > 0 && this.view === 'hire_chat') this.markChatAsRead('hr');
-                }
-            });
+            this.visibilityHandler = () => {
+                if (document.visibilityState === 'visible') this.syncAfterResume();
+            };
+            this.onlineHandler = () => {
+                if (this.socket && !this.socket.connected) this.socket.connect();
+                this.syncAfterResume();
+            };
+            this.pageShowHandler = (event) => {
+                if (event.persisted) this.syncAfterResume();
+            };
+            document.addEventListener('visibilitychange', this.visibilityHandler);
+            window.addEventListener('online', this.onlineHandler);
+            window.addEventListener('pageshow', this.pageShowHandler);
 
            window.addEventListener('popstate', (e) => {
                 if (this.imagePreviewModal.open) {
@@ -2050,13 +2178,18 @@ document.addEventListener("DOMContentLoaded", function() {
         beforeUnmount() {
             if (this.chatPollTimer) clearInterval(this.chatPollTimer);
             Object.values(this.orderTimers).forEach(timer => clearInterval(timer));
+            if (this.socket) this.socket.disconnect();
+            if (this.visibilityHandler) document.removeEventListener('visibilitychange', this.visibilityHandler);
+            if (this.onlineHandler) window.removeEventListener('online', this.onlineHandler);
+            if (this.pageShowHandler) window.removeEventListener('pageshow', this.pageShowHandler);
         },
 
         methods: {
            // ── [BUG FIX #2] Wrapper for window.open used in templates ──
             // window is not in Vue's template scope; using a method fixes runtime errors.
             openInNewTab(url) {
-                window.open(url, '_blank');
+                const safeUrl = normalizeHttpUrl(url);
+                if (safeUrl) window.open(safeUrl, '_blank', 'noopener,noreferrer');
             },
             openImagePreview(url) {
                 history.pushState({ modal: 'image_preview' }, null, '');
@@ -2152,23 +2285,45 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
             },
 
-         showAnnouncement() {
-                if (!this.settings.announcement) return;
-                Swal.fire({
+            getAnnouncementInterval(value) {
+                if (value === null || value === undefined || value === false) return null;
+                const normalized = String(value).trim().toLowerCase();
+                if (!normalized || ['false', 'off', 'disabled', 'null'].includes(normalized)) return null;
+                if (value === true || normalized === 'true') return 24 * 60 * 60 * 1000;
+                const duration = Number.parseInt(normalized, 10);
+                return Number.isFinite(duration) && duration >= 0 ? duration : null;
+            },
+
+            getAnnouncementSignature() {
+                const text = String(this.settings.announcement || '');
+                let hash = 0;
+                for (let i = 0; i < text.length; i += 1) {
+                    hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+                }
+                return `${text.length}:${hash}`;
+            },
+
+            openAnnouncementPopup() {
+                const announcement = String(this.settings.announcement || '').trim();
+                if (!announcement || this.announcementPopupOpen) return Promise.resolve();
+                this.announcementPopupOpen = true;
+                const safeAnnouncement = escapeHTML(announcement);
+                return Swal.fire({
                     html: `
                         <div class="flex flex-col items-center pt-4 pb-1 px-2">
                             <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 text-blue-500">
                                 <i class="ri-notification-4-fill text-2xl"></i>
                             </div>
                             <h3 class="text-lg font-bold text-slate-800 tracking-widest mb-4">平台公告</h3>
-                            <div class="text-[14px] text-slate-600 leading-loose tracking-wide whitespace-pre-wrap bg-slate-50 p-5 rounded-2xl border border-slate-100 w-full text-left font-medium">${this.settings.announcement}</div>
+                            <div class="max-h-[55vh] overflow-y-auto text-[14px] text-slate-600 leading-loose tracking-wide whitespace-pre-wrap break-words bg-slate-50 p-5 rounded-2xl border border-slate-100 w-full text-left font-medium">${safeAnnouncement}</div>
                         </div>
                     `,
                     showConfirmButton: true,
+                    showCloseButton: true,
                     confirmButtonText: '我知道了',
                     buttonsStyling: false,
                     customClass: {
-                        popup: 'rounded-[2rem] border border-slate-100 shadow-2xl bg-white pt-4 pb-3 px-3 w-[85%] max-w-[340px]',
+                        popup: 'rounded-[2rem] border border-slate-100 shadow-2xl bg-white pt-4 pb-3 px-3 w-[92%] max-w-[420px]',
                         confirmButton: 'w-[95%] text-white tracking-widest text-base font-bold py-4 rounded-xl mt-2 mb-1 shadow-lg shadow-blue-500/30 active:scale-95 transition-all whitespace-nowrap'
                     },
                     didOpen: () => {
@@ -2178,7 +2333,41 @@ document.addEventListener("DOMContentLoaded", function() {
                         btn.style.outline = 'none';
                         btn.style.webkitTapHighlightColor = 'transparent';
                     }
+                }).finally(() => {
+                    this.announcementPopupOpen = false;
                 });
+            },
+
+            showAnnouncement() {
+                return this.openAnnouncementPopup();
+            },
+
+            showAutomaticAnnouncement() {
+                if (this.announcementPopupShown) return;
+                const announcement = String(this.settings.announcement || '').trim();
+                const interval = this.getAnnouncementInterval(this.settings.showPopup);
+                if (!announcement || interval === null) return;
+
+                const signature = this.getAnnouncementSignature();
+                const storedRaw = localStorage.getItem('nexus_last_pop');
+                let stored = safeJSONParse(storedRaw, null);
+                if (!stored && storedRaw && Number.isFinite(Number(storedRaw))) {
+                    stored = { shownAt: Number(storedRaw), signature: '' };
+                }
+
+                const shownAt = Number(stored?.shownAt) || 0;
+                const sameAnnouncement = stored?.signature === signature;
+                const isDue = interval === 0
+                    || !sameAnnouncement
+                    || Date.now() - shownAt >= interval;
+                if (!isDue) return;
+
+                this.announcementPopupShown = true;
+                localStorage.setItem('nexus_last_pop', JSON.stringify({
+                    shownAt: Date.now(),
+                    signature,
+                }));
+                this.openAnnouncementPopup();
             },
 
             async initPushSubscription() {
@@ -2310,74 +2499,83 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // ── Socket ──
            initSocket() {
-                if (this.socket) this.socket.disconnect();
-                this.socket = io(API_BASE, { transports: ['websocket'], reconnection: true });
+                if (this.socket) this.socket.disconnect();
+                this.socket = io(API_BASE, {
+                    auth: { token: this.user.token || '' },
+                    transports: ['websocket', 'polling'],
+                    upgrade: true,
+                    timeout: 15000,
+                    reconnection: true,
+                    reconnectionAttempts: Infinity,
+                    reconnectionDelay: 800,
+                    reconnectionDelayMax: 5000,
+                });
 
-                this.socket.on('connect', () => {
-                    const sid_cs = this.user.id ? `user_${this.user.id}`    : this.chatSessionId;
-                    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-                    this.socket.emit('join_room', sid_cs);
-                    this.socket.emit('join_room', sid_hr);
-                    this.pollChat();
-                    this.initData();
-                });
+                this.socket.on('connect', () => {
+                    const sid_cs = this.user.id ? `user_${this.user.id}`    : this.chatSessionId;
+                    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+                    this.socket.emit('join_room', sid_cs);
+                    this.socket.emit('join_room', sid_hr);
+                    this.pollChat();
+                    if (this.hasLoadedInitialData) this.initData(false);
+                });
 
               this.socket.on('product_added', (newProduct) => {
-                    this.products.unshift(newProduct);
-                    const existingCat = this.categories.find(c => c.main === newProduct.category);
-                    if (!existingCat && newProduct.category) {
-                        this.categories.push({ main: newProduct.category, subs: newProduct.sub_category ? [newProduct.sub_category] : [] });
-                    } else if (existingCat && newProduct.sub_category && !existingCat.subs.includes(newProduct.sub_category)) {
-                        existingCat.subs.push(newProduct.sub_category);
-                    }
-                });
+                    this.products.unshift(newProduct);
+                    const existingCat = this.categories.find(c => c.main === newProduct.category);
+                    if (!existingCat && newProduct.category) {
+                        this.categories.push({ main: newProduct.category, subs: newProduct.sub_category ? [newProduct.sub_category] : [] });
+                    } else if (existingCat && newProduct.sub_category && !existingCat.subs.includes(newProduct.sub_category)) {
+                        existingCat.subs.push(newProduct.sub_category);
+                    }
+                });
 
-               // 新增监听：后台分类排序保存时触发
-                this.socket.on('global_update', (data) => {
-    if (data) {
-        if (data.categories) {
-            const oldCategories = this.categories;
-            this.categories = data.categories.map(catName => {
-                const existing = oldCategories.find(c => c.main === catName);
-                return existing ? existing : { main: catName, subs: [] };
-            });
-        }
-        if (data.rate) this.settings.rate = data.rate;
-        if (data.feeRate !== undefined) this.settings.feeRate = data.feeRate;
-        if (data.announcement) this.settings.announcement = data.announcement;
-    }
+               // 新增监听：后台分类排序保存时触发
+                this.socket.on('global_update', (data) => {
+    if (data) {
+        if (data.categories) {
+            const oldCategories = this.categories;
+            this.categories = data.categories.map(catName => {
+                const existing = oldCategories.find(c => c.main === catName);
+                return existing ? existing : { main: catName, subs: [] };
+            });
+        }
+        if (data.rate !== undefined) this.settings.rate = Number(data.rate) || 0;
+        if (data.feeRate !== undefined) this.settings.feeRate = data.feeRate;
+        if (data.announcement !== undefined) this.settings.announcement = String(data.announcement || '');
+    }
 });
 
-               this.socket.on('product_updated', (updatedProduct) => {
-                    const index = this.products.findIndex(p => p.id == updatedProduct.id);
-                    if (index !== -1) {
-                        this.products[index] = { ...this.products[index], ...updatedProduct };
-                    }
-                    const existingCat = this.categories.find(c => c.main === updatedProduct.category);
-                    if (!existingCat && updatedProduct.category) {
-                        this.categories.push({ main: updatedProduct.category, subs: updatedProduct.sub_category ? [updatedProduct.sub_category] : [] });
-                    } else if (existingCat && updatedProduct.sub_category && !existingCat.subs.includes(updatedProduct.sub_category)) {
-                        existingCat.subs.push(updatedProduct.sub_category);
-                    }
-                    if (this.productDetailModal.open && this.productDetailModal.prod.id == updatedProduct.id) {
-                        this.currentImgIndex = 0;
-                    }
-                });
+               this.socket.on('product_updated', (updatedProduct) => {
+                    const index = this.products.findIndex(p => p.id == updatedProduct.id);
+                    if (index !== -1) {
+                        this.products[index] = { ...this.products[index], ...updatedProduct };
+                    }
+                    const existingCat = this.categories.find(c => c.main === updatedProduct.category);
+                    if (!existingCat && updatedProduct.category) {
+                        this.categories.push({ main: updatedProduct.category, subs: updatedProduct.sub_category ? [updatedProduct.sub_category] : [] });
+                    } else if (existingCat && updatedProduct.sub_category && !existingCat.subs.includes(updatedProduct.sub_category)) {
+                        existingCat.subs.push(updatedProduct.sub_category);
+                    }
+                    if (this.productDetailModal.open && this.productDetailModal.prod.id == updatedProduct.id) {
+                        this.currentImgIndex = 0;
+                    }
+                });
 
-                this.socket.on('product_patched', (patchData) => {
-                    const index = this.products.findIndex(p => p.id == patchData.id);
-                    if (index !== -1) {
-                        this.products[index] = { ...this.products[index], ...patchData };
-                        this.products = [...this.products];
-                    }
-                });
+                this.socket.on('product_patched', (patchData) => {
+                    const index = this.products.findIndex(p => p.id == patchData.id);
+                    if (index !== -1) {
+                        this.products[index] = { ...this.products[index], ...patchData };
+                        this.products = [...this.products];
+                    }
+                });
 
-                this.socket.on('product_deleted', (productId) => {
-                    this.products = this.products.filter(p => p.id != productId);
-                });
+                this.socket.on('product_deleted', (productId) => {
+                    this.products = this.products.filter(p => p.id != productId);
+                });
 
                 this.socket.on('products_category_changed', (data) => {
-                    const strIds = data.ids.map(String);
+                    const strIds = Array.isArray(data?.ids) ? data.ids.map(String) : [];
                     this.products.forEach(p => {
                         if (strIds.includes(String(p.id))) {
                             p.category = data.category;
@@ -2392,19 +2590,19 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
 
                 this.socket.on('setting_updated', (data) => {
-                    const { key, value } = data;
-                    if (key === 'rate') this.settings.rate = value;
-                    if (key === 'feeRate') this.settings.feeRate = value;
-                    if (key === 'wallet') this.settings.wallet = value;
-                    if (key === 'announcement') this.settings.announcement = value;
+                    const { key, value } = data;
+                    if (key === 'rate') this.settings.rate = Number(value) || 0;
+                    if (key === 'feeRate') this.settings.feeRate = Number(value) || 0;
+                    if (key === 'wallet') this.settings.wallet = String(value || '');
+                    if (key === 'announcement') this.settings.announcement = String(value || '');
                     if (key === 'showPopup' || key === 'popup') this.settings.showPopup = value;
-                });
-
-                this.socket.on('hiring_updated', (newList) => {
-                    this.hiringList = newList;
                 });
 
-                this.socket.on('order_update', (data) => {
+                this.socket.on('hiring_updated', (newList) => {
+                    this.hiringList = Array.isArray(newList) ? newList : [];
+                });
+
+                this.socket.on('order_update', (data) => {
     if (!this.user.id) return;
     
     // 处理订单数据更新
@@ -2474,12 +2672,10 @@ document.addEventListener("DOMContentLoaded", function() {
                this.socket.on('new_message', (msg) => {
                     const sid_cs = this.user.id ? `user_${this.user.id}`    : this.chatSessionId;
                     const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+                    if (!msg || typeof msg.session_id !== 'string') return;
                     const isHR = msg.session_id.startsWith('hr_');
-                    if (isHR) {
-                        if (!this.hrMessages.some(m => m.id == msg.id)) this.hrMessages.push(msg);
-                    } else {
-                        if (!this.csMessages.some(m => m.id == msg.id)) this.csMessages.push(msg);
-                    }
+                    const isNewMessage = this.upsertChatMessage(msg);
+                    if (!isNewMessage) return;
 
                    if ((this.view === 'hire_chat' && isHR) ||
                         (this.chatOpen && !isHR)) {
@@ -2490,21 +2686,23 @@ document.addEventListener("DOMContentLoaded", function() {
                             if (box) box.scrollTop = box.scrollHeight;
                             if (msg.sender === 'admin') this.messageSound.play().catch(() => {});
                         });
-                   } else if (msg.session_id === sid_cs || msg.session_id === sid_hr) {
-                        if (msg.sender === 'admin') {
-                            this.messageSound.play().catch(() => {});
-                            const title = isHR ? 'HR 老板助理 发来新消息' : '客服发来新消息';
-                            if (!isHR && !this.chatOpen) {
-                                this.unreadMessages++;
+	                   } else if (msg.session_id === sid_cs || msg.session_id === sid_hr) {
+	                        if (msg.sender === 'admin') {
+	                            const title = isHR ? 'HR 老板助理 发来新消息' : '客服发来新消息';
+	                            if (!isHR && !this.chatOpen) {
+	                                this.unreadMessages++;
                                 if (document.visibilityState !== 'visible') this.newMessagesWhileHidden = true;
                             }
                             if (isHR && this.view !== 'hire_chat') {
-                                this.hrUnreadMessages++;
-                                if (document.visibilityState !== 'visible') this.newHrMessagesWhileHidden = true;
-                            }
-                            this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content, title);
-                        }
-                    }
+	                                this.hrUnreadMessages++;
+	                                if (document.visibilityState !== 'visible') this.newHrMessagesWhileHidden = true;
+	                            }
+                                if (document.visibilityState === 'visible') {
+	                                this.messageSound.play().catch(() => {});
+	                                this.showChatNotification(msg.msg_type === 'image' ? '[图片]' : msg.content, title);
+                                }
+	                        }
+	                    }
                 });
                 // 监听客服撤回消息事件
                 this.socket.on('message_recalled', (data) => {
@@ -2531,110 +2729,135 @@ document.addEventListener("DOMContentLoaded", function() {
             async sendChatImage(event) {
                 const file = event.target.files[0];
                 if (!file) return;
-                if (file.size > 2 * 1024 * 1024) {
-                    Swal.fire('文件过大', '请上传小于 2MB 的图片', 'warning');
+                if (!file.type.startsWith('image/')) {
+                    event.target.value = '';
+                    Swal.fire('格式错误', '请选择图片文件', 'warning');
                     return;
                 }
-                const tempId = Date.now();
-                this.chatMessages.push({ sender: 'user', content: '图片上传中...', msg_type: 'text', id: tempId });
-                this.$nextTick(() => {
-                    const boxId = this.view === 'hire_chat' ? 'hire-chat-msgs' : 'chat-msgs';
-                    const box   = document.getElementById(boxId);
-                    if (box) box.scrollTop = box.scrollHeight;
+                if (file.size > 5 * 1024 * 1024) {
+                    event.target.value = '';
+                    Swal.fire('文件过大', '请上传不超过 5MB 的图片', 'warning');
+                    return;
+                }
+                let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
+                if (this.view === 'hire_chat') sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+                const clientMessageId = `img_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+                const tempId = `temp_${clientMessageId}`;
+                this.upsertChatMessage({
+                    sender: 'user',
+                    content: '图片上传中…',
+                    msg_type: 'text',
+                    id: tempId,
+                    client_message_id: clientMessageId,
+                    session_id: sid,
+                    created_at: new Date().toISOString(),
+                    pending: true
                 });
+                this.scrollToBottom(this.view === 'hire_chat' ? 'hire-chat-msgs' : 'chat-msgs');
                 try {
                     const formData = new FormData();
                     formData.append('file', file);
                     const uploadRes = await axios.post(`${API_BASE}/api/chat/upload`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-                    if (uploadRes.data.success) {
-                        const imgUrl = uploadRes.data.url;
-                        let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
-                        if (this.view === 'hire_chat') sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-                        const res = await axios.post(`${API_BASE}/api/chat/send`, { sessionId: sid, text: imgUrl, msgType: 'image', source: window.location.hostname, userId: this.user.id });
-                        if (res.data && res.data.success === false && (res.data.msg === '用户不存在' || res.data.msg === '用户已被删除' || res.data.code === 404)) {
-                            this.logout();
-                            Swal.fire({ icon: 'error', title: '操作失败', text: '您的账号已被删除', confirmButtonText: '确定' });
-                            return;
-                        }
-                        this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
+                    if (!uploadRes.data?.success || !uploadRes.data.url) throw new Error('图片上传失败');
+                    const imgUrl = uploadRes.data.url;
+                    this.upsertChatMessage({
+                        id: tempId,
+                        client_message_id: clientMessageId,
+                        session_id: sid,
+                        sender: 'user',
+                        content: imgUrl,
+                        msg_type: 'image',
+                        pending: true
+                    });
+                    const res = await axios.post(`${API_BASE}/api/chat/send`, {
+                        sessionId: sid,
+                        text: imgUrl,
+                        msgType: 'image',
+                        source: window.location.hostname,
+                        userId: this.user.id,
+                        clientMessageId
+                    });
+                    if (res.data && res.data.success === false && (res.data.msg === '用户不存在' || res.data.msg === '用户已被删除' || res.data.code === 404)) {
+                        this.logout();
+                        Swal.fire({ icon: 'error', title: '操作失败', text: '您的账号已被删除', confirmButtonText: '确定' });
+                        return;
                     }
+                    if (!res.data?.success) throw new Error(res.data?.msg || '图片发送失败');
+                    if (res.data.message) this.upsertChatMessage(res.data.message);
                 } catch (e) {
-                    Swal.fire('发送失败', '图片上传失败', 'error');
-                    this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
+                    const collection = sid.startsWith('hr_') ? this.hrMessages : this.csMessages;
+                    const pendingIndex = collection.findIndex(message => message.id === tempId);
+                    if (pendingIndex >= 0) collection.splice(pendingIndex, 1);
+                    Swal.fire('发送失败', e.message || '图片发送失败', 'error');
+                } finally {
+                    event.target.value = '';
                 }
-                event.target.value = '';
             },
 
-           // ── Init Data ──
-            async initData() {
-                this.loading = true;
-                try {
-                    let base64Str = "";
-                    
+            // ── Init Data ──
+            applyPublicData(data, allowAnnouncement = false) {
+                if (!data || typeof data !== 'object') throw new Error('公开数据格式错误');
+                this.products = Array.isArray(data.products) ? data.products : [];
+                this.categories = Array.isArray(data.categories) ? data.categories : [];
+                this.hiringList = Array.isArray(data.hiring) ? data.hiring : [];
+                this.settings = {
+                    rate: Number.isFinite(Number(data.rate)) ? Number(data.rate) : 7,
+                    feeRate: Number.isFinite(Number(data.feeRate)) ? Number(data.feeRate) : 0,
+                    announcement: String(data.announcement || ''),
+                    showPopup: data.showPopup ?? false,
+                    wallet: String(data.wallet || '')
+                };
+                this.hasLoadedInitialData = true;
+                if (allowAnnouncement) this.showAutomaticAnnouncement();
+            },
+
+            async initData(allowAnnouncement = true) {
+                if (this.publicDataRefreshInFlight) return this.publicDataRefreshInFlight;
+                this.loading = !this.hasLoadedInitialData;
+                this.publicDataRefreshInFlight = (async () => {
+                    try {
+                    let base64Str = '';
+
                     if (window._PREFETCH_PROMISE) {
                         const json = await window._PREFETCH_PROMISE;
-                        if (json && json.data) {
-                            base64Str = json.data;
-                        }
+                        if (json && typeof json.data === 'string') base64Str = json.data;
                         window._PREFETCH_PROMISE = null;
                     }
-                    
+
                     if (!base64Str) {
                         const res = await axios.get(`${API_BASE}/api/public/data`, {
                             headers: { 'x-nexus-client': 'v1.0' }
                         });
-                        base64Str = res.data.data;
-                }
-                
-                // 删掉那个 50ms 的延迟，直接解析
-                const jsonString = decodeURIComponent(escape(window.atob(base64Str)));
-                    const d = JSON.parse(jsonString);
-                    this.products  = d.products  || [];
-                    this.categories = d.categories || [];
-                    this.hiringList = d.hiring    || [];
-                    this.settings   = { rate: d.rate, feeRate: d.feeRate, announcement: d.announcement, showPopup: d.showPopup, wallet: d.wallet };
+                        base64Str = res.data && res.data.data;
+                    }
+                    if (typeof base64Str !== 'string' || !base64Str) {
+                        throw new Error('公开数据响应为空');
+                    }
 
-                   if (this.settings.showPopup !== null && this.settings.showPopup !== undefined && this.settings.showPopup !== 'false' && this.settings.announcement) {
-                        const duration   = parseInt(this.settings.showPopup);
-                        const lastPopStr = localStorage.getItem('nexus_last_pop');
-                        const now        = Date.now();
-                        if (duration === 0 || !lastPopStr || (now > parseInt(lastPopStr) + duration)) {
-                            Swal.fire({
-                                html: `
-                                    <div class="flex flex-col items-center pt-4 pb-1 px-2">
-                                        <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 text-blue-500">
-                                            <i class="ri-notification-4-fill text-2xl"></i>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-slate-800 tracking-widest mb-4">平台公告</h3>
-                                        <div class="text-[14px] text-slate-600 leading-loose tracking-wide whitespace-pre-wrap bg-slate-50 p-5 rounded-2xl border border-slate-100 w-full text-left font-medium">${this.settings.announcement}</div>
-                                    </div>
-                                `,
-                                showConfirmButton: true,
-                                confirmButtonText: '我知道了',
-                                buttonsStyling: false,
-                                         customClass: {
-                                    popup: 'rounded-[2rem] border border-slate-100 shadow-2xl bg-white pt-4 pb-3 px-3 w-[90%] max-w-[340px]',
-                                    confirmButton: 'w-[95%] text-white tracking-widest text-base font-bold py-4 rounded-xl mt-2 mb-1 shadow-lg shadow-blue-500/30 active:scale-95 transition-all whitespace-nowrap'
-                                },
-                                didOpen: () => {
-                                    const btn = Swal.getConfirmButton();
-                                    btn.style.background = 'linear-gradient(90deg, #3b82f6 0%, #4f46e5 100%)';
-                                    btn.style.border = 'none';
-                                    btn.style.outline = 'none';
-                                    btn.style.webkitTapHighlightColor = 'transparent';
-                                }
-                            });
-                            localStorage.setItem('nexus_last_pop', now.toString());
+                    const jsonString = decodeURIComponent(escape(window.atob(base64Str)));
+                    const data = JSON.parse(jsonString);
+                    this.applyPublicData(data, allowAnnouncement);
+                    localStorage.setItem('nexus_public_cache', JSON.stringify(data));
+
+                        if (this.user.id) {
+                            await Promise.allSettled([this.loadOrders(), this.loadUserBalance()]);
                         }
+                    } catch (error) {
+                        const cached = safeJSONParse(localStorage.getItem('nexus_public_cache'), null);
+                        if (!this.hasLoadedInitialData && cached) {
+                            try {
+                                this.applyPublicData(cached, allowAnnouncement);
+                            } catch (_) {}
+                        }
+                        console.error('加载公开数据失败', error);
+                    } finally {
+                        this.loading = false;
                     }
-                    if (this.user.id) {
-                        this.loadOrders();
-                        this.loadUserBalance();
-                    }
-                } catch (e) {
-                    console.error(e);
+                })();
+                try {
+                    return await this.publicDataRefreshInFlight;
                 } finally {
-                    this.loading = false;
+                    this.publicDataRefreshInFlight = null;
                 }
             },
 
@@ -2720,20 +2943,36 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
             },
 
-           setView(v) {
-                if (this.view === 'hire_chat' && v !== 'hire_chat') {
-                    this.chatMessages = [];
-                }
-                if (v === 'products') {
-                    this.view = 'home';
-                    this.filterCat = 'all';
-                    this.filterSubCat = 'all';
-                } else {
-                    this.view = v;
-                    if (v === 'home') { this.filterCat = 'all'; this.filterSubCat = 'all'; }
-                }
-                this.mobileMenuOpen = false;
-            },
+            setView(v) {
+                if (this.view === 'hire_chat' && v !== 'hire_chat') {
+                    this.chatMessages = [];
+                }
+                if (v === 'products') {
+                    this.view = 'home';
+                    this.homeSection = 'products';
+                    this.filterCat = 'all';
+                    this.filterSubCat = 'all';
+                    this.$nextTick(() => {
+                        document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                } else {
+                    this.view = v;
+                    if (v === 'home') {
+                        this.homeSection = 'home';
+                        this.filterCat = 'all';
+                        this.filterSubCat = 'all';
+                    }
+                }
+                this.mobileMenuOpen = false;
+                if (v !== 'products') window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+
+            selectCategory(category) {
+                this.view = 'home';
+                this.homeSection = 'products';
+                this.filterCat = category;
+                this.filterSubCat = 'all';
+            },
 
             checkLoginAndGo(target) {
                 if (!this.user.id) { this.openAuth('login'); return; }
@@ -2838,34 +3077,136 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             },
 
-           async pollChat() {
-                if (!this.user.id && !this.chatSessionId) return { csCount: 0, hrCount: 0 };
-                try {
-                    const sid_cs = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
-                    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-                    const [res_cs, res_hr] = await Promise.all([
-                        axios.get(`${API_BASE}/api/chat/history/${sid_cs}`),
-                        axios.get(`${API_BASE}/api/chat/history/${sid_hr}`)
-                    ]);
-                    const newCs = res_cs.data || [];
-                    const newHr = res_hr.data || [];
-                    const csAdded = newCs.filter(m => m.sender === 'admin' && !this.csMessages.some(old => old.id == m.id));
-                    const hrAdded = newHr.filter(m => m.sender === 'admin' && !this.hrMessages.some(old => old.id == m.id));
-                    this.csMessages = newCs;
-                    this.hrMessages = newHr;
-                    if (this.view === 'hire_chat') {
-                        this.chatMessages = this.hrMessages;
-                    } else {
-                        this.chatMessages = this.csMessages;
+            upsertChatMessage(message) {
+                if (!message || typeof message.session_id !== 'string') return false;
+                const isHR = message.session_id.startsWith('hr_');
+                const target = isHR ? this.hrMessages : this.csMessages;
+                const index = target.findIndex(item =>
+                    (message.client_message_id && item.client_message_id === message.client_message_id)
+                    || (message.id != null && item.id == message.id)
+                );
+                if (index >= 0) {
+                    const confirmed = !String(message.id || '').startsWith('temp_');
+                    target.splice(index, 1, { ...target[index], ...message, pending: confirmed ? false : message.pending });
+                }
+                else target.push(message);
+                if ((isHR && this.view === 'hire_chat') || (!isHR && this.view !== 'hire_chat')) {
+                    this.chatMessages = target;
+                }
+                return index < 0;
+            },
+
+            mergeChatMessages(current, incoming) {
+                const merged = [...current];
+                incoming.forEach(message => {
+                    const index = merged.findIndex(item =>
+                        (message.client_message_id && item.client_message_id === message.client_message_id)
+                        || (message.id != null && item.id == message.id)
+                    );
+                    if (index >= 0) {
+                        const confirmed = !String(message.id || '').startsWith('temp_');
+                        merged.splice(index, 1, { ...merged[index], ...message, pending: confirmed ? false : message.pending });
                     }
-                    this.chatInitialized = true;
-                    return { csCount: csAdded.length, hrCount: hrAdded.length };
-                } catch (e) {
-                    return { csCount: 0, hrCount: 0 };
+                    else merged.push(message);
+                });
+                return merged;
+            },
+
+            getLatestChatId(messages) {
+                return messages.reduce((latest, message) => {
+                    const id = Number(message.id);
+                    return Number.isSafeInteger(id) ? Math.max(latest, id) : latest;
+                }, 0);
+            },
+
+            async pollChat() {
+                if (!this.user.id) return { csCount: 0, hrCount: 0 };
+                if (this.chatPollInFlight) return this.chatPollInFlight;
+                this.chatPollInFlight = (async () => {
+                    try {
+                        const sidCs = `user_${this.user.id}`;
+                        const sidHr = `hr_user_${this.user.id}`;
+                        const latestCsId = this.getLatestChatId(this.csMessages);
+                        const latestHrId = this.getLatestChatId(this.hrMessages);
+                        const [resCs, resHr] = await Promise.all([
+                            axios.get(`${API_BASE}/api/chat/history/${sidCs}`, {
+                                params: { userId: this.user.id, limit: 200, afterId: latestCsId || undefined }
+                            }),
+                            axios.get(`${API_BASE}/api/chat/history/${sidHr}`, {
+                                params: { userId: this.user.id, limit: 200, afterId: latestHrId || undefined }
+                            })
+                        ]);
+                        const newCs = Array.isArray(resCs.data) ? resCs.data : [];
+                        const newHr = Array.isArray(resHr.data) ? resHr.data : [];
+                        const csAdded = newCs.filter(message =>
+                            message.sender === 'admin'
+                            && !this.csMessages.some(old => old.id == message.id)
+                        );
+                        const hrAdded = newHr.filter(message =>
+                            message.sender === 'admin'
+                            && !this.hrMessages.some(old => old.id == message.id)
+                        );
+                        this.csMessages = this.mergeChatMessages(this.csMessages, newCs);
+                        this.hrMessages = this.mergeChatMessages(this.hrMessages, newHr);
+                        this.chatMessages = this.view === 'hire_chat'
+                            ? this.hrMessages
+                            : this.csMessages;
+                        this.chatInitialized = true;
+                        return { csCount: csAdded.length, hrCount: hrAdded.length };
+                    } catch (e) {
+                        return { csCount: 0, hrCount: 0 };
+                    }
+                })();
+                try {
+                    return await this.chatPollInFlight;
+                } finally {
+                    this.chatPollInFlight = null;
                 }
             },
 
+            async syncAfterResume() {
+                const hadHiddenCsMessage = this.newMessagesWhileHidden;
+                const hadHiddenHrMessage = this.newHrMessagesWhileHidden;
+                this.newMessagesWhileHidden = false;
+                this.newHrMessagesWhileHidden = false;
+
+                const [diff] = await Promise.all([
+                    this.pollChat(),
+                    this.initData(false)
+                ]);
+
+                if ((diff.csCount > 0 || hadHiddenCsMessage) && !this.chatOpen) {
+                    if (!hadHiddenCsMessage) this.unreadMessages += diff.csCount;
+                    const last = [...this.csMessages].reverse().find(message => message.sender === 'admin');
+                    if (last) {
+                        this.showChatNotification(
+                            last.msg_type === 'image' ? '[图片]' : last.content,
+                            '客服发来新消息'
+                        );
+                    }
+                    this.messageSound.play().catch(() => {});
+                }
+
+                if ((diff.hrCount > 0 || hadHiddenHrMessage) && this.view !== 'hire_chat') {
+                    if (!hadHiddenHrMessage) this.hrUnreadMessages += diff.hrCount;
+                    const lastHr = [...this.hrMessages].reverse().find(message => message.sender === 'admin');
+                    if (lastHr) {
+                        this.showChatNotification(
+                            lastHr.msg_type === 'image' ? '[图片]' : lastHr.content,
+                            'HR助理发来新消息'
+                        );
+                    }
+                    this.messageSound.play().catch(() => {});
+                }
+
+                if (diff.csCount > 0 && this.chatOpen) this.markChatAsRead('cs');
+                if (diff.hrCount > 0 && this.view === 'hire_chat') this.markChatAsRead('hr');
+            },
+
             showChatNotification(text, title = '客服发来新消息') {
+                if (document.visibilityState !== 'visible') return;
+                const safeTitle = escapeHTML(title);
+                const safeText = escapeHTML(text);
                 const Toast = Swal.mixin({
                     toast: true,
                     position: 'top-end',
@@ -2903,8 +3244,8 @@ document.addEventListener("DOMContentLoaded", function() {
                                 <i class="ri-customer-service-2-fill text-lg"></i>
                             </div>
                             <div class="flex-1 min-w-0 pr-2 pt-0.5">
-                                <h4 class="font-bold text-slate-800 text-sm mb-0.5 truncate">${title}</h4>
-                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">${text}</p>
+                                <h4 class="font-bold text-slate-800 text-sm mb-0.5 truncate">${safeTitle}</h4>
+                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">${safeText}</p>
                             </div>
                         </div>
                     `
@@ -2918,15 +3259,44 @@ document.addEventListener("DOMContentLoaded", function() {
                 this.chatSubmitting = true;
                 let sid = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
                 if (this.view === 'hire_chat') sid = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+                const clientMessageId = `web_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+                const tempId = `temp_${clientMessageId}`;
+                const optimisticMessage = {
+                    id: tempId,
+                    client_message_id: clientMessageId,
+                    session_id: sid,
+                    sender: 'user',
+                    content: txt,
+                    msg_type: 'text',
+                    created_at: new Date().toISOString(),
+                    pending: true
+                };
+                this.chatInput = '';
+                this.upsertChatMessage(optimisticMessage);
+                this.scrollToBottom(this.view === 'hire_chat' ? 'hire-chat-msgs' : 'chat-msgs');
                 try {
-                    const res = await axios.post(`${API_BASE}/api/chat/send`, { sessionId: sid, text: txt, msgType: 'text', source: window.location.hostname, userId: this.user.id });
+                    const res = await axios.post(`${API_BASE}/api/chat/send`, {
+                        sessionId: sid,
+                        text: txt,
+                        msgType: 'text',
+                        source: window.location.hostname,
+                        userId: this.user.id,
+                        clientMessageId
+                    });
                     if (res.data && res.data.success === false && (res.data.msg === '用户不存在' || res.data.msg === '用户已被删除' || res.data.code === 404)) {
                         this.logout();
                         Swal.fire({ icon: 'error', title: '操作失败', text: '您的账号已被删除', confirmButtonText: '确定' });
                         return;
                     }
-                    this.chatInput = '';
-                } catch (e) {} finally { this.chatSubmitting = false; }
+                    if (!res.data?.success) throw new Error(res.data?.msg || '发送失败');
+                    if (res.data.message) this.upsertChatMessage(res.data.message);
+                } catch (e) {
+                    const collection = sid.startsWith('hr_') ? this.hrMessages : this.csMessages;
+                    const pendingIndex = collection.findIndex(message => message.id === tempId);
+                    if (pendingIndex >= 0) collection.splice(pendingIndex, 1);
+                    if (!this.chatInput) this.chatInput = txt;
+                    Swal.fire({ toast: true, position: 'top', icon: 'error', title: '消息发送失败，请重试', timer: 2200, showConfirmButton: false });
+                } finally { this.chatSubmitting = false; }
             },
 
             // ── Auth ──
@@ -2952,6 +3322,11 @@ document.addEventListener("DOMContentLoaded", function() {
             },
 
             async handleAuth() {
+                this.authForm.contact = this.authForm.contact.trim();
+                if (this.authForm.contact.length < 3) {
+                    Swal.fire('验证提示', '请输入至少 3 位账号或联系方式', 'warning');
+                    return;
+                }
                 if (this.authForm.captchaInput !== this.captcha.value) {
                     Swal.fire('验证失败', '验证码错误，请重新输入', 'error');
                     this.genCaptcha();
@@ -2979,7 +3354,8 @@ document.addEventListener("DOMContentLoaded", function() {
                             contact:    this.authForm.contact,
                             uid:        res.data.uid || uid,
                             balance:    res.data.balance || 0,
-                            inviteCode: res.data.inviteCode
+                            inviteCode: res.data.inviteCode,
+                            token:      res.data.token
                         };
                         localStorage.setItem('nexus_user', JSON.stringify(this.user));
                         this.authModal.open = false;
@@ -3110,22 +3486,24 @@ document.addEventListener("DOMContentLoaded", function() {
                         let timerInterval;
                         if (this.buyForm.method === 'USDT') {
                             const finalAmount = parseFloat(res.data.usdtAmount).toFixed(4);
+                            const wallet = String(res.data.wallet || '');
+                            const safeWallet = escapeHTML(wallet);
+                            const safeOrderId = escapeHTML(res.data.orderId);
                             await Swal.fire({
                                 title: '',
                                 html: `
                                     <div class="flex flex-col items-center pt-2">
                                         <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3"><i class="ri-check-line text-4xl text-emerald-500"></i></div>
                                         <h3 class="text-2xl font-bold text-slate-800 mb-1">等待支付</h3>
-                                        <div class="text-sm text-slate-500 mb-4">订单号: <span class="font-mono font-bold text-slate-700">${res.data.orderId}</span></div>
+                                        <div class="text-sm text-slate-500 mb-4">订单号: <span class="font-mono font-bold text-slate-700">${safeOrderId}</span></div>
                                         <div class="text-sm text-slate-500 mb-1">请在 <b id="pay-timer" class="text-red-500 font-mono text-lg">30:00</b> 内完成支付</div>
                                         <div class="mb-4"><span class="text-sm text-slate-500">支付金额:</span><span class="text-2xl font-bold text-red-500 ml-1">${finalAmount} USDT</span></div>
                                         <p class="text-[10px] text-slate-400 mb-4">(已自动包含随机小数以便核对)</p>
                                         <div class="w-full text-left mb-1 text-sm font-bold text-slate-700">支付地址 (TRC20):</div>
-                                        <div class="w-full bg-slate-50 p-3 rounded-xl border border-dashed border-brand-300 relative cursor-pointer hover:bg-blue-50 transition group"
-                                             onclick="navigator.clipboard.writeText('${res.data.wallet}'); const tip=document.getElementById('copy-tip-success'); tip.innerHTML='✅ 地址已复制，请务必仔细核对！'; tip.className='text-center text-xs text-emerald-600 mt-1 font-bold';">
-                                            <div class="font-mono text-sm font-bold text-slate-800 break-all text-center select-all">${res.data.wallet}</div>
+                                        <button id="copy-wallet-success" type="button" class="w-full bg-slate-50 p-3 rounded-xl border border-dashed border-brand-300 relative cursor-pointer hover:bg-blue-50 transition group">
+                                            <div class="font-mono text-sm font-bold text-slate-800 break-all text-center select-all">${safeWallet}</div>
                                             <div id="copy-tip-success" class="text-center text-xs text-brand-500 mt-1 flex items-center justify-center gap-1 transition-all"><i class="ri-file-copy-line"></i> 点击复制地址</div>
-                                        </div>
+                                        </button>
                                         <div class="w-full bg-orange-50 border border-orange-100 rounded-xl p-3 mt-4 text-left">
                                             <div class="flex items-center gap-1 text-orange-600 font-bold text-xs mb-1"><i class="ri-alert-fill"></i> 重要提示:</div>
                                             <ul class="text-[11px] text-orange-800 space-y-0.5 list-decimal pl-4">
@@ -3149,6 +3527,15 @@ document.addEventListener("DOMContentLoaded", function() {
                                 },
                                 didOpen: () => {
                                     const timerDisplay = document.getElementById('pay-timer');
+                                    const copyButton = document.getElementById('copy-wallet-success');
+                                    copyButton?.addEventListener('click', async () => {
+                                        await this.copyText(wallet);
+                                        const tip = document.getElementById('copy-tip-success');
+                                        if (tip) {
+                                            tip.textContent = '✅ 地址已复制，请务必仔细核对！';
+                                            tip.className = 'text-center text-xs text-emerald-600 mt-1 font-bold';
+                                        }
+                                    });
                                     if (timerDisplay) {
                                         let timeLeft = 30 * 60;
                                         timerInterval = setInterval(() => {
@@ -3218,6 +3605,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
                 if (order.payment_method === 'USDT' || order.payment_method === 'usdt') {
                     const finalAmount = parseFloat(order.usdt_amount).toFixed(4);
+                    const wallet = String(order.wallet || '');
+                    const safeWallet = escapeHTML(wallet);
+                    const safeOrderId = escapeHTML(order.order_id);
                     let timerInterval;
                     Swal.fire({
                         title: '',
@@ -3225,16 +3615,15 @@ document.addEventListener("DOMContentLoaded", function() {
                             <div class="flex flex-col items-center pt-2">
                                 <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3"><i class="ri-check-line text-4xl text-emerald-500"></i></div>
                                 <h3 class="text-2xl font-bold text-slate-800 mb-1">等待支付</h3>
-                                <div class="text-sm text-slate-500 mb-4">订单号: <span class="font-mono font-bold text-slate-700">${order.order_id}</span></div>
+                                <div class="text-sm text-slate-500 mb-4">订单号: <span class="font-mono font-bold text-slate-700">${safeOrderId}</span></div>
                                 <div class="text-sm text-slate-500 mb-1">请在 <b id="pay-timer" class="text-red-500 font-mono text-lg">--:--</b> 内完成支付</div>
                                 <div class="mb-4"><span class="text-sm text-slate-500">支付金额:</span><span class="text-2xl font-bold text-red-500 ml-1">${finalAmount} USDT</span></div>
                                 <p class="text-[10px] text-slate-400 mb-4">(已自动包含随机小数以便核对)</p>
                                 <div class="w-full text-left mb-1 text-sm font-bold text-slate-700">支付地址 (TRC20):</div>
-                                <div class="w-full bg-slate-50 p-3 rounded-xl border border-dashed border-brand-300 relative cursor-pointer hover:bg-blue-50 transition group"
-                                     onclick="navigator.clipboard.writeText('${order.wallet}'); const tip=document.getElementById('copy-tip'); tip.innerHTML='✅ 地址已复制，请务必仔细核对！'; tip.className='text-center text-xs text-emerald-600 mt-1 font-bold';">
-                                    <div class="font-mono text-sm font-bold text-slate-800 break-all text-center select-all">${order.wallet}</div>
+                                <button id="copy-wallet" type="button" class="w-full bg-slate-50 p-3 rounded-xl border border-dashed border-brand-300 relative cursor-pointer hover:bg-blue-50 transition group">
+                                    <div class="font-mono text-sm font-bold text-slate-800 break-all text-center select-all">${safeWallet}</div>
                                     <div id="copy-tip" class="text-center text-xs text-brand-500 mt-1 flex items-center justify-center gap-1 transition-all"><i class="ri-file-copy-line"></i> 点击复制地址</div>
-                                </div>
+                                </button>
                                 <div class="w-full bg-orange-50 border border-orange-100 rounded-xl p-3 mt-4 text-left">
                                     <div class="flex items-center gap-1 text-orange-600 font-bold text-xs mb-1"><i class="ri-alert-fill"></i> 重要提示:</div>
                                     <ul class="text-[11px] text-orange-800 space-y-0.5 list-decimal pl-4">
@@ -3258,7 +3647,17 @@ document.addEventListener("DOMContentLoaded", function() {
                         },
                         didOpen: () => {
                             const timerDisplay = document.getElementById('pay-timer');
-                            const expires = new Date(order.expires_at).getTime();
+                            const copyButton = document.getElementById('copy-wallet');
+                            copyButton?.addEventListener('click', async () => {
+                                await this.copyText(wallet);
+                                const tip = document.getElementById('copy-tip');
+                                if (tip) {
+                                    tip.textContent = '✅ 地址已复制，请务必仔细核对！';
+                                    tip.className = 'text-center text-xs text-emerald-600 mt-1 font-bold';
+                                }
+                            });
+                            const parsedExpiry = new Date(order.expires_at).getTime();
+                            const expires = Number.isFinite(parsedExpiry) ? parsedExpiry : Date.now() + 30 * 60 * 1000;
                             timerInterval = setInterval(() => {
                                 const now      = new Date().getTime();
                                 const distance = expires - now;
@@ -3275,8 +3674,13 @@ document.addEventListener("DOMContentLoaded", function() {
                     return;
                 }
 
-if (order.qrcode_url) {
-                    const isCashier = order.qrcode_url.includes('cashier');
+                const paymentUrl = normalizeHttpUrl(order.qrcode_url);
+                if (paymentUrl) {
+                    const isCashier = paymentUrl.includes('cashier');
+                    const safeProductName = escapeHTML(order.product_name || '订单支付');
+                    const safeOrderId = escapeHTML(order.order_id);
+                    const safePaymentUrl = escapeHTML(paymentUrl);
+                    const safeCnyAmount = Number(order.cny_amount || 0).toFixed(2);
                     let payMethodText = '请使用扫码支付';
                     if (order.payment_method === 'WeChat') payMethodText = '请使用微信扫码支付';
                     else if (order.payment_method === 'Alipay') payMethodText = '请使用支付宝扫码支付';
@@ -3294,17 +3698,17 @@ if (order.qrcode_url) {
                             <div class="text-center">
                                 <div class="mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
                                     <span class="text-xs text-slate-400 block">购买商品</span>
-                                    <span class="text-sm font-bold text-slate-800 line-clamp-1">${order.product_name}</span>
+                                    <span class="text-sm font-bold text-slate-800 line-clamp-1">${safeProductName}</span>
                                 </div>
-                                <p class="mb-2 text-xs text-slate-500">订单号: ${order.order_id}</p>
+                                <p class="mb-2 text-xs text-slate-500">订单号: ${safeOrderId}</p>
                                 <p class="text-red-500 font-bold mb-4">请在 <b id="qr-timer">--:--</b> 内完成支付</p>
                                 ${isCashier ? `
                                     <button id="go-pay-btn" type="button" class="btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 w-full mb-4">点击去支付</button>
                                 ` : `
-                                    <img src="${order.qrcode_url}" style="max-width:200px; margin:0 auto; border:1px solid #eee; border-radius:8px; padding:5px;">
+                                    <img src="${safePaymentUrl}" alt="支付二维码" style="max-width:200px; margin:0 auto; border:1px solid #eee; border-radius:8px; padding:5px;">
                                     <p class="mt-3 text-sm text-slate-500">${payMethodText}</p>
                                 `}
-                                <p class="mt-1 text-lg font-bold text-brand-600">¥${order.cny_amount}</p>
+                                <p class="mt-1 text-lg font-bold text-brand-600">¥${safeCnyAmount}</p>
                             </div>
                         `,
                         icon: 'info',
@@ -3317,7 +3721,8 @@ if (order.qrcode_url) {
                         allowOutsideClick: false,
                         didOpen: () => {
                             const timerDisplay = document.getElementById('qr-timer');
-                            const expires = new Date(order.expires_at).getTime();
+                            const parsedExpiry = new Date(order.expires_at).getTime();
+                            const expires = Number.isFinite(parsedExpiry) ? parsedExpiry : Date.now() + 30 * 60 * 1000;
                             timerInterval = setInterval(() => {
                                 const now      = new Date().getTime();
                                 const distance = expires - now;
@@ -3331,7 +3736,7 @@ if (order.qrcode_url) {
                             const goPayBtn = document.getElementById('go-pay-btn');
                             if (goPayBtn) goPayBtn.addEventListener('click', () => { 
                                 sessionStorage.setItem('paying_order_id', order.order_id);
-                                window.open(order.qrcode_url, '_blank'); 
+                                window.open(paymentUrl, '_blank', 'noopener,noreferrer');
                             });
                         },
                         willClose: () => { clearInterval(timerInterval); }
@@ -3340,20 +3745,22 @@ if (order.qrcode_url) {
                         else if (result.isDenied) this.reportQrIssue(order.order_id);
                     });
                 } else {
+                    const orderId = String(order.order_id || '');
+                    const safeOrderId = escapeHTML(orderId);
+                    const safeCnyAmount = Number(order.cny_amount || 0).toFixed(2);
                     Swal.fire({
                         html: `
                             <div class="flex flex-col items-center pt-2">
                                 <div class="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-3 border border-blue-100 shadow-inner"><i class="ri-time-line text-4xl text-blue-500 animate-pulse"></i></div>
                                 <h3 class="text-2xl font-bold text-slate-800 mb-1">等待收款码</h3>
-                                <div class="w-full bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300 my-5 cursor-pointer hover:bg-blue-50 hover:border-brand-300 transition"
-                                     onclick="navigator.clipboard.writeText('${order.order_id}'); const tip=document.getElementById('copy-tip-wait'); tip.innerHTML='✅ 单号已复制，快发给客服吧'; tip.className='text-xs text-emerald-600 mt-2 font-bold';">
+                                <button id="copy-order-wait" type="button" class="w-full bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300 my-5 cursor-pointer hover:bg-blue-50 hover:border-brand-300 transition">
                                     <div class="text-xs text-slate-400 mb-1 font-medium tracking-wide">订单号 (点击复制)</div>
-                                    <div class="font-mono font-black text-slate-800 text-lg">${order.order_id} <i class="ri-file-copy-line text-brand-500 ml-1 text-base"></i></div>
+                                    <div class="font-mono font-black text-slate-800 text-lg">${safeOrderId} <i class="ri-file-copy-line text-brand-500 ml-1 text-base"></i></div>
                                     <div id="copy-tip-wait" class="text-xs text-transparent mt-2">占位</div>
-                                </div>
+                                </button>
                                 <div class="mb-5 border-b border-slate-100 w-full pb-5">
                                     <span class="text-sm text-slate-500">需支付金额:</span>
-                                    <span class="text-3xl font-bold text-brand-600 ml-2 font-mono">¥${order.cny_amount}</span>
+                                    <span class="text-3xl font-bold text-brand-600 ml-2 font-mono">¥${safeCnyAmount}</span>
                                 </div>
                                 <div class="w-full bg-orange-50 p-3.5 rounded-xl border border-orange-100 text-xs text-orange-700 leading-relaxed font-medium text-left">
                                     <i class="ri-customer-service-2-line text-sm align-middle"></i> 请联系在线客服获取最新收款码，并将复制好的单号发送给客服用于核对。
@@ -3363,6 +3770,16 @@ if (order.qrcode_url) {
                         showConfirmButton: true,
                         confirmButtonText: '我知道了',
                         buttonsStyling: false,
+                        didOpen: () => {
+                            document.getElementById('copy-order-wait')?.addEventListener('click', async () => {
+                                await this.copyText(orderId);
+                                const tip = document.getElementById('copy-tip-wait');
+                                if (tip) {
+                                    tip.textContent = '✅ 单号已复制，快发给客服吧';
+                                    tip.className = 'text-xs text-emerald-600 mt-2 font-bold';
+                                }
+                            });
+                        },
                         customClass: {
                             popup: 'rounded-3xl p-2 shadow-2xl',
                             confirmButton: 'w-full btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-500/20 mt-2 hover:-translate-y-0.5 active:scale-95 transition-all whitespace-nowrap'
@@ -3414,15 +3831,33 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
             // ── Withdraw ──
             openWithdrawModal() {
                 if (!this.user.id) return this.openAuth('login');
-                if ((this.user.balance || 0) < 1) return Swal.fire('提示', '余额不足1 USDT，无法提现', 'warning');
+                if ((this.user.balance || 0) < 5) return Swal.fire('提示', '余额不足 5 USDT，无法提现', 'warning');
                 history.pushState({ modal: 'withdraw' }, null, '');
                 this.withdrawModal.open = true;
-                this.withdrawForm = { amount: Math.min(this.user.balance || 0, 10), address: '' };
+                this.withdrawForm = {
+                    amount: Math.min(this.user.balance || 0, 10),
+                    method: 'USDT',
+                    address: '',
+                    confirmAddr: false,
+                    file: null,
+                    preview: ''
+                };
             },
 
             handleWithdrawFile(event) {
                 const file = event.target.files[0];
-                if (file) { this.withdrawForm.file = file; this.withdrawForm.preview = URL.createObjectURL(file); }
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    event.target.value = '';
+                    return Swal.fire('格式错误', '请上传图片文件', 'warning');
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    event.target.value = '';
+                    return Swal.fire('图片过大', '收款码图片不能超过 5MB', 'warning');
+                }
+                if (this.withdrawForm.preview) URL.revokeObjectURL(this.withdrawForm.preview);
+                this.withdrawForm.file = file;
+                this.withdrawForm.preview = URL.createObjectURL(file);
             },
 
             async submitWithdraw() {
@@ -3445,6 +3880,7 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
                     const res = await axios.post(`${API_BASE}/api/withdraw`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
                     if (res.data.success) {
                         this.withdrawModal.open = false;
+                        if (this.withdrawForm.preview) URL.revokeObjectURL(this.withdrawForm.preview);
                         Swal.fire({ title: '提现申请已提交', text: '客服稍后会处理请稍等', icon: 'success', confirmButtonColor: '#3b82f6' });
                         this.loadUserBalance();
                     } else { Swal.fire('提现失败', res.data.msg, 'error'); }
@@ -3457,16 +3893,24 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
                 this.paymentProofModal.open     = true;
                 this.paymentProofModal.orderId  = orderId;
                 this.paymentProofModal.proofUrl = '';
+                this.paymentProofModal.file     = null;
             },
 
             handlePaymentProof(event) {
                 const file = event.target.files[0];
-                if (file) {
-                    this.paymentProofModal.file = file;
-                    const reader = new FileReader();
-                    reader.onload = (e) => { this.paymentProofModal.proofUrl = e.target.result; };
-                    reader.readAsDataURL(file);
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    event.target.value = '';
+                    return Swal.fire('格式错误', '请上传图片格式的支付凭证', 'warning');
                 }
+                if (file.size > 5 * 1024 * 1024) {
+                    event.target.value = '';
+                    return Swal.fire('图片过大', '支付凭证不能超过 5MB', 'warning');
+                }
+                this.paymentProofModal.file = file;
+                const reader = new FileReader();
+                reader.onload = (e) => { this.paymentProofModal.proofUrl = e.target.result; };
+                reader.readAsDataURL(file);
             },
 
             async submitPaymentProof() {
@@ -3579,7 +4023,10 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
 
             async fetchChatHistory(sessionId) {
                 try {
-                    const res = await axios.get(`${API_BASE}/api/chat/history/${sessionId}`);
+                    if (!this.user.id) return;
+                    const res = await axios.get(`${API_BASE}/api/chat/history/${sessionId}`, {
+                        params: { userId: this.user.id, limit: 200 }
+                    });
                     this.chatMessages = res.data || [];
                     this.scrollToBottom('hire-chat-msgs');
                 } catch (e) {}
@@ -3587,19 +4034,31 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
 
             // ── Utilities ──
             markChatAsRead(type) {
-                if (!this.user.id && !this.chatSessionId) return;
-                const sid = type === 'hr' ? (this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`) : (this.user.id ? `user_${this.user.id}` : this.chatSessionId);
-                axios.post(`${API_BASE}/api/chat/read`, { sessionId: sid }).catch(()=>{});
+                if (!this.user.id) return;
+                const sid = type === 'hr' ? `hr_user_${this.user.id}` : `user_${this.user.id}`;
+                axios.post(`${API_BASE}/api/chat/read`, { sessionId: sid, userId: this.user.id }).catch(()=>{});
             },
-            copyText(text) {
-                const tempInput = document.createElement('input');
-                tempInput.value = text;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                const Toast = Swal.mixin({ toast: true, position: 'top', showConfirmButton: false, timer: 2000, customClass: { popup: 'rounded-2xl shadow-lg border border-emerald-100 bg-emerald-50 mt-4' } });
-                Toast.fire({ html: '<div class="flex items-center justify-center gap-2 text-emerald-600 font-bold text-sm tracking-widest"><i class="ri-checkbox-circle-fill text-xl"></i> 复制成功</div>' });
+            async copyText(text) {
+                try {
+                    const value = String(text ?? '');
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(value);
+                    } else {
+                        const tempInput = document.createElement('textarea');
+                        tempInput.value = value;
+                        tempInput.style.position = 'fixed';
+                        tempInput.style.opacity = '0';
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        const copied = document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        if (!copied) throw new Error('浏览器拒绝复制');
+                    }
+                    const Toast = Swal.mixin({ toast: true, position: 'top', showConfirmButton: false, timer: 1600, customClass: { popup: 'rounded-2xl shadow-lg border border-emerald-100 bg-emerald-50 mt-4' } });
+                    Toast.fire({ html: '<div class="flex items-center justify-center gap-2 text-emerald-600 font-bold text-sm tracking-widest"><i class="ri-checkbox-circle-fill text-xl"></i> 复制成功</div>' });
+                } catch (_) {
+                    Swal.fire('复制失败', '请长按内容后手动复制', 'warning');
+                }
             },
 
             scrollToBottom(id) {
@@ -3718,7 +4177,8 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
 
             getTelegramLink(contact) {
                 if (!contact) return '#';
-                return `https://t.me/${contact.replace('@', '')}`;
+                const username = String(contact).trim().replace(/^@/, '');
+                return /^[A-Za-z0-9_]{5,32}$/.test(username) ? `https://t.me/${username}` : '#';
             },
 
             // ── Invite ──
@@ -3760,11 +4220,11 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
             },
 
            openWalletAction(type) {
-                if (type === 'recharge') this.openRechargeModal();
-                else this.openWithdrawModal();
-            },
+                if (type === 'recharge') this.openRechargeModal();
+                else this.openWithdrawModal();
+            },
 
- 
+ 
         }
     });
 
