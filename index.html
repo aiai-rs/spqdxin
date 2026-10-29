@@ -3,9 +3,22 @@
 <head>
     <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-   <title>Nexus System</title>
+    <title>Nexus System</title>
     <script>
-        window._API_BASE = window.location.hostname.includes("xaw8888.com") ? "https://api.xaw8888.com" : "https://api.xaw888.com";
+        window.XAW88_HAOGE_TG = window.XAW88_HAOGE_TG || 'r6363';
+        window._SITE_CONFIGS = [
+            { domain: 'xaw8888.com', apiBase: 'https://api.xaw8888.com', domainText: 'XAW8888.COM', bossName: '龍哥', contactId: 'iibb8', bossTitle: '龍哥' },
+            // api.xaw88.com 当前未确认可用，所以 XAW88.COM 暂时复用现有商城 API。
+            { domain: 'xaw88.com', apiBase: 'https://api.xaw888.com', domainText: 'XAW88.COM', bossName: '豪哥', contactId: window.XAW88_HAOGE_TG, bossTitle: '豪哥' },
+            { domain: 'xaw888.com', apiBase: 'https://api.xaw888.com', domainText: 'XAW888.COM', bossName: 'Boss', contactId: 'rrii8', bossTitle: 'Boss' }
+        ];
+        window._GET_SITE_CONFIG = function(hostname) {
+            const host = String(hostname || '').toLowerCase().replace(/\.+$/, '');
+            return window._SITE_CONFIGS.find(c => host === c.domain || host.endsWith('.' + c.domain))
+                || window._SITE_CONFIGS[window._SITE_CONFIGS.length - 1];
+        };
+        window._SITE_CONFIG = window._GET_SITE_CONFIG(window.location.hostname);
+        window._API_BASE = window._SITE_CONFIG.apiBase;
         window._PREFETCH_PROMISE = fetch(window._API_BASE + '/api/public/data', {
             headers: { 'x-nexus-client': 'v1.0' }
         }).then(r => r.json()).catch(e => null);
@@ -575,7 +588,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>
             </div>
 
             <!-- Loading Skeleton -->
@@ -663,7 +676,7 @@
                                 没有Telegram也就是飞机的点击下方的 <span class="text-emerald-500 font-bold">对接专线</span> 或商城的在线客服转接。
                             </p>
                             <p class="font-medium text-slate-800">
-                                投诉/应聘/商务合作请直接联系我：<a :href="'https://t.me/' + siteConfig.contactId" class="text-brand-600 font-bold hover:underline">@{{ siteConfig.contactId }}</a>
+                                投诉/应聘/商务合作请直接联系我：<a v-if="siteConfig.contactId" :href="'https://t.me/' + siteConfig.contactId" class="text-brand-600 font-bold hover:underline">@{{ siteConfig.contactId }}</a><span v-else class="text-amber-600 font-bold">请使用下方对接专线</span>
                             </p>
                         </div>
                         <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 relative overflow-hidden group">
@@ -685,13 +698,16 @@
                             <i class="ri-shield-check-fill text-red-500 text-lg mt-0.5 shrink-0"></i>
                             <div class="text-xs text-red-700 leading-5">
                                 <span class="font-bold block mb-1">防骗指南</span>
-                                认准管理员用户名均为 <span class="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono font-bold border border-red-100">4字母+1数字</span> (如: rrss0, {{ siteConfig.contactId }})。请勿轻信任何模仿我们的账号！
+                                认准管理员用户名均为 <span class="bg-white px-1.5 py-0.5 rounded text-red-600 font-mono font-bold border border-red-100">4字母+1数字</span><span v-if="siteConfig.contactId"> (如: rrss0, {{ siteConfig.contactId }})</span>。请勿轻信任何模仿我们的账号！
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-3 pt-2">
-                            <a :href="'https://t.me/' + siteConfig.contactId" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
+                            <a v-if="siteConfig.contactId" :href="'https://t.me/' + siteConfig.contactId" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm">
                                 <i class="ri-telegram-fill text-[#0088cc] text-lg"></i> 联系{{ siteConfig.bossName }}
                             </a>
+                            <button v-else type="button" disabled class="flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-400 cursor-not-allowed">
+                                <i class="ri-telegram-fill text-lg"></i> {{ siteConfig.bossName }}联系方式待配置
+                            </button>
                             <a @click="openHireChat" class="cursor-pointer flex items-center justify-center gap-2 bg-white border border-slate-200 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition shadow-sm relative overflow-hidden">
                                 <i class="ri-chat-smile-3-line text-emerald-500 text-lg"></i> 对接专线
                                 <span v-if="hrUnreadMessages > 0" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-bl-lg font-bold shadow-sm">{{ hrUnreadMessages }}</span>
@@ -1333,7 +1349,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-1.5">密码</label>
-                        <input v-model="authForm.password" required type="password" placeholder="请输入密码 (至少6位)" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition text-sm">
+                        <input v-model="authForm.password" required type="password" placeholder="请输入密码 (至少8位)" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-50 focus:outline-none transition text-sm">
                     </div>
                     <div v-if="authModal.mode === 'register'">
                         <label class="block text-sm font-bold text-slate-700 mb-1.5">确认密码</label>
@@ -1394,9 +1410,9 @@
                                 <i class="ri-money-dollar-circle-line text-2xl" :class="buyForm.method==='USDT'?'text-brand-600':'text-slate-400'"></i>
                                 <div><div class="text-sm font-bold">USDT (TRC20)</div><div class="text-[10px] opacity-70">到账快 / 推荐</div></div>
                             </div>
-                            <div @click="buyForm.method = 'WeChat'" :class="buyForm.method === 'WeChat' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
-                                <i class="ri-wechat-pay-line text-2xl" :class="buyForm.method==='WeChat'?'text-brand-600':'text-slate-400'"></i>
-                                <div><div class="text-sm font-bold">微信支付</div><div class="text-[10px] opacity-70">自动回调</div></div>
+                            <div aria-disabled="true" class="border border-slate-200 bg-slate-100 rounded-xl p-4 cursor-not-allowed opacity-60 flex flex-col items-center gap-2 text-center text-slate-400">
+                                <i class="ri-wechat-pay-line text-2xl"></i>
+                                <div><div class="text-sm font-bold">微信支付</div><div class="text-[10px]">暂时维护中</div></div>
                             </div>
                             <div @click="buyForm.method = 'Alipay'" :class="buyForm.method === 'Alipay' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
                                 <i class="ri-alipay-line text-2xl" :class="buyForm.method==='Alipay'?'text-brand-600':'text-slate-400'"></i>
@@ -1521,9 +1537,9 @@
                                 <i class="ri-money-dollar-circle-line text-2xl" :class="rechargeForm.method==='USDT'?'text-brand-600':'text-slate-400'"></i>
                                 <div><div class="text-sm font-bold">USDT</div><div class="text-[10px] opacity-70">到账快 / 推荐</div></div>
                             </div>
-                            <div @click="rechargeForm.method = 'WeChat'" :class="rechargeForm.method === 'WeChat' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
-                                <i class="ri-wechat-pay-line text-2xl" :class="rechargeForm.method==='WeChat'?'text-brand-600':'text-slate-400'"></i>
-                                <div><div class="text-sm font-bold">微信</div><div class="text-[10px] opacity-70">自动回调</div></div>
+                            <div aria-disabled="true" class="border border-slate-200 bg-slate-100 rounded-xl p-4 cursor-not-allowed opacity-60 flex flex-col items-center gap-2 text-center text-slate-400">
+                                <i class="ri-wechat-pay-line text-2xl"></i>
+                                <div><div class="text-sm font-bold">微信</div><div class="text-[10px]">暂时维护中</div></div>
                             </div>
                             <div @click="rechargeForm.method = 'Alipay'" :class="rechargeForm.method === 'Alipay' ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'" class="border rounded-xl p-4 cursor-pointer transition flex flex-col items-center gap-2 text-center">
                                 <i class="ri-alipay-line text-2xl" :class="rechargeForm.method==='Alipay'?'text-brand-600':'text-slate-400'"></i>
@@ -1552,7 +1568,7 @@
                         <label class="block text-sm font-bold text-slate-700 mb-2">提现方式</label>
                         <div class="grid grid-cols-3 gap-2 mb-4">
                             <div @click="withdrawForm.method = 'USDT'"   :class="withdrawForm.method === 'USDT'   ? 'border-brand-500 bg-brand-50 text-brand-600 ring-1 ring-brand-500' : 'border-slate-200'" class="border rounded-lg p-3 text-center cursor-pointer text-sm font-bold transition">USDT</div>
-                            <div @click="withdrawForm.method = 'WeChat'" :class="withdrawForm.method === 'WeChat' ? 'border-brand-500 bg-brand-50 text-brand-600 ring-1 ring-brand-500' : 'border-slate-200'" class="border rounded-lg p-3 text-center cursor-pointer text-sm font-bold transition">微信</div>
+                            <div aria-disabled="true" class="border border-slate-200 bg-slate-100 text-slate-400 rounded-lg p-3 text-center cursor-not-allowed text-sm font-bold opacity-60">微信维护中</div>
                             <div @click="withdrawForm.method = 'Alipay'" :class="withdrawForm.method === 'Alipay' ? 'border-brand-500 bg-brand-50 text-brand-600 ring-1 ring-brand-500' : 'border-slate-200'" class="border rounded-lg p-3 text-center cursor-pointer text-sm font-bold transition">支付宝</div>
                         </div>
                     </div>
@@ -1736,12 +1752,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
-    let API_BASE = "";
-    if (window.location.hostname.includes("xaw8888.com")) {
-        API_BASE = "https://api.xaw8888.com";
-    } else {
-        API_BASE = "https://api.xaw888.com";
-    }
+    let API_BASE = window._API_BASE;
     const safeJSONParse = (data, defaultVal) => {
         try {
             return data ? JSON.parse(data) : defaultVal;
@@ -1749,6 +1760,16 @@ document.addEventListener("DOMContentLoaded", function() {
             return defaultVal;
         }
     };
+
+    // 所有用户私有接口自动携带服务端签发的会话 Token。
+    axios.interceptors.request.use(config => {
+        const savedUser = safeJSONParse(localStorage.getItem('nexus_user'), {});
+        if (savedUser.token) {
+            config.headers = config.headers || {};
+            config.headers.Authorization = `Bearer ${savedUser.token}`;
+        }
+        return config;
+    });
 
     // 全局拦截器处理 401 Token 过期
     axios.interceptors.response.use(response => response, error => {
@@ -1774,12 +1795,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 deferredPrompt: null,
                 isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream,
 
-                siteConfig: {
-                    domainText: 'XAW888.COM',
-                    bossName: 'Boss',
-                    contactId: 'rrii8',
-                    bossTitle: 'Boss'
-                },
+                siteConfig: { ...window._SITE_CONFIG },
 
                 view: 'home',
                 profileTab: 'orders',
@@ -1793,9 +1809,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 isMounted: false,
                 loading: true,
                 searchQuery: '',
-                filterCat: 'all',
-                filterSubCat: 'all',
-                mobileMenuOpen: false,
+                filterCat: 'all',
+                filterSubCat: 'all',
+                mobileMenuOpen: false,
 
                 // Invite
                 inviteModal: { open: false, list: [], totalEarned: 0, loading: false },
@@ -1871,20 +1887,20 @@ document.addEventListener("DOMContentLoaded", function() {
         },
 
         computed: {
-            activeSubCategories() {
-                if (this.filterCat === 'all') return [];
-                const catObj = this.categories.find(c => c.main === this.filterCat);
-                return catObj ? catObj.subs : [];
-            },
-            filteredProducts() {
-                let list = this.products.filter(p => {
-                    const matchesSearch = !this.searchQuery ||
-                        p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                        (p.description || '').toLowerCase().includes(this.searchQuery.toLowerCase());
-                    const matchesCat = this.filterCat === 'all' || p.category === this.filterCat;
-                    const matchesSubCat = this.filterSubCat === 'all' || p.sub_category === this.filterSubCat;
-                    return matchesSearch && matchesCat && matchesSubCat;
-                });
+            activeSubCategories() {
+                if (this.filterCat === 'all') return [];
+                const catObj = this.categories.find(c => c.main === this.filterCat);
+                return catObj ? catObj.subs : [];
+            },
+            filteredProducts() {
+                let list = this.products.filter(p => {
+                    const matchesSearch = !this.searchQuery ||
+                        p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                        (p.description || '').toLowerCase().includes(this.searchQuery.toLowerCase());
+                    const matchesCat = this.filterCat === 'all' || p.category === this.filterCat;
+                    const matchesSubCat = this.filterSubCat === 'all' || p.sub_category === this.filterSubCat;
+                    return matchesSearch && matchesCat && matchesSubCat;
+                });
                 return list.sort((a, b) => {
                     const pinA = a.is_pinned ? 1 : 0;
                     const pinB = b.is_pinned ? 1 : 0;
@@ -1943,14 +1959,7 @@ document.addEventListener("DOMContentLoaded", function() {
         },
 
         created() {
-            const host = window.location.hostname;
-            const lgDomains = ['xaw8888.com'];
-            const isLg = lgDomains.some(d => host === d || host.endsWith('.' + d));
-            if (isLg) {
-                this.siteConfig = { domainText: 'XAW8888.COM', bossName: '龍哥', contactId: 'iibb8', bossTitle: '龍哥' };
-            } else {
-                this.siteConfig = { domainText: 'XAW888.COM',  bossName: 'Boss',  contactId: 'rrii8', bossTitle: 'Boss'  };
-            }
+            this.siteConfig = { ...window._GET_SITE_CONFIG(window.location.hostname) };
             this.initData();
             axios.post(`${API_BASE}/api/public/visit`, { domain: window.location.hostname });
         },
@@ -2310,71 +2319,75 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // ── Socket ──
            initSocket() {
-                if (this.socket) this.socket.disconnect();
-                this.socket = io(API_BASE, { transports: ['websocket'], reconnection: true });
+                if (this.socket) this.socket.disconnect();
+                this.socket = io(API_BASE, {
+                    transports: ['websocket'],
+                    reconnection: true,
+                    auth: { token: this.user.token || '' }
+                });
 
-                this.socket.on('connect', () => {
-                    const sid_cs = this.user.id ? `user_${this.user.id}`    : this.chatSessionId;
-                    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-                    this.socket.emit('join_room', sid_cs);
-                    this.socket.emit('join_room', sid_hr);
-                    this.pollChat();
+                this.socket.on('connect', () => {
+                    const sid_cs = this.user.id ? `user_${this.user.id}`    : this.chatSessionId;
+                    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
+                    this.socket.emit('join_room', sid_cs);
+                    this.socket.emit('join_room', sid_hr);
+                    this.pollChat();
                     this.initData();
-                });
+                });
 
               this.socket.on('product_added', (newProduct) => {
-                    this.products.unshift(newProduct);
-                    const existingCat = this.categories.find(c => c.main === newProduct.category);
-                    if (!existingCat && newProduct.category) {
-                        this.categories.push({ main: newProduct.category, subs: newProduct.sub_category ? [newProduct.sub_category] : [] });
-                    } else if (existingCat && newProduct.sub_category && !existingCat.subs.includes(newProduct.sub_category)) {
-                        existingCat.subs.push(newProduct.sub_category);
-                    }
-                });
+                    this.products.unshift(newProduct);
+                    const existingCat = this.categories.find(c => c.main === newProduct.category);
+                    if (!existingCat && newProduct.category) {
+                        this.categories.push({ main: newProduct.category, subs: newProduct.sub_category ? [newProduct.sub_category] : [] });
+                    } else if (existingCat && newProduct.sub_category && !existingCat.subs.includes(newProduct.sub_category)) {
+                        existingCat.subs.push(newProduct.sub_category);
+                    }
+                });
 
-               // 新增监听：后台分类排序保存时触发
-                this.socket.on('global_update', (data) => {
-    if (data) {
-        if (data.categories) {
-            const oldCategories = this.categories;
-            this.categories = data.categories.map(catName => {
-                const existing = oldCategories.find(c => c.main === catName);
-                return existing ? existing : { main: catName, subs: [] };
-            });
-        }
-        if (data.rate) this.settings.rate = data.rate;
-        if (data.feeRate !== undefined) this.settings.feeRate = data.feeRate;
-        if (data.announcement) this.settings.announcement = data.announcement;
-    }
+               // 新增监听：后台分类排序保存时触发
+                this.socket.on('global_update', (data) => {
+    if (data) {
+        if (data.categories) {
+            const oldCategories = this.categories;
+            this.categories = data.categories.map(catName => {
+                const existing = oldCategories.find(c => c.main === catName);
+                return existing ? existing : { main: catName, subs: [] };
+            });
+        }
+        if (data.rate) this.settings.rate = data.rate;
+        if (data.feeRate !== undefined) this.settings.feeRate = data.feeRate;
+        if (data.announcement) this.settings.announcement = data.announcement;
+    }
 });
 
-               this.socket.on('product_updated', (updatedProduct) => {
-                    const index = this.products.findIndex(p => p.id == updatedProduct.id);
-                    if (index !== -1) {
-                        this.products[index] = { ...this.products[index], ...updatedProduct };
-                    }
-                    const existingCat = this.categories.find(c => c.main === updatedProduct.category);
-                    if (!existingCat && updatedProduct.category) {
-                        this.categories.push({ main: updatedProduct.category, subs: updatedProduct.sub_category ? [updatedProduct.sub_category] : [] });
-                    } else if (existingCat && updatedProduct.sub_category && !existingCat.subs.includes(updatedProduct.sub_category)) {
-                        existingCat.subs.push(updatedProduct.sub_category);
-                    }
-                    if (this.productDetailModal.open && this.productDetailModal.prod.id == updatedProduct.id) {
-                        this.currentImgIndex = 0;
-                    }
-                });
+               this.socket.on('product_updated', (updatedProduct) => {
+                    const index = this.products.findIndex(p => p.id == updatedProduct.id);
+                    if (index !== -1) {
+                        this.products[index] = { ...this.products[index], ...updatedProduct };
+                    }
+                    const existingCat = this.categories.find(c => c.main === updatedProduct.category);
+                    if (!existingCat && updatedProduct.category) {
+                        this.categories.push({ main: updatedProduct.category, subs: updatedProduct.sub_category ? [updatedProduct.sub_category] : [] });
+                    } else if (existingCat && updatedProduct.sub_category && !existingCat.subs.includes(updatedProduct.sub_category)) {
+                        existingCat.subs.push(updatedProduct.sub_category);
+                    }
+                    if (this.productDetailModal.open && this.productDetailModal.prod.id == updatedProduct.id) {
+                        this.currentImgIndex = 0;
+                    }
+                });
 
-                this.socket.on('product_patched', (patchData) => {
-                    const index = this.products.findIndex(p => p.id == patchData.id);
-                    if (index !== -1) {
-                        this.products[index] = { ...this.products[index], ...patchData };
-                        this.products = [...this.products];
-                    }
-                });
+                this.socket.on('product_patched', (patchData) => {
+                    const index = this.products.findIndex(p => p.id == patchData.id);
+                    if (index !== -1) {
+                        this.products[index] = { ...this.products[index], ...patchData };
+                        this.products = [...this.products];
+                    }
+                });
 
-                this.socket.on('product_deleted', (productId) => {
-                    this.products = this.products.filter(p => p.id != productId);
-                });
+                this.socket.on('product_deleted', (productId) => {
+                    this.products = this.products.filter(p => p.id != productId);
+                });
 
                 this.socket.on('products_category_changed', (data) => {
                     const strIds = data.ids.map(String);
@@ -2392,19 +2405,19 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
 
                 this.socket.on('setting_updated', (data) => {
-                    const { key, value } = data;
-                    if (key === 'rate') this.settings.rate = value;
-                    if (key === 'feeRate') this.settings.feeRate = value;
-                    if (key === 'wallet') this.settings.wallet = value;
-                    if (key === 'announcement') this.settings.announcement = value;
+                    const { key, value } = data;
+                    if (key === 'rate') this.settings.rate = value;
+                    if (key === 'feeRate') this.settings.feeRate = value;
+                    if (key === 'wallet') this.settings.wallet = value;
+                    if (key === 'announcement') this.settings.announcement = value;
                     if (key === 'showPopup' || key === 'popup') this.settings.showPopup = value;
-                });
+                });
 
-                this.socket.on('hiring_updated', (newList) => {
+                this.socket.on('hiring_updated', (newList) => {
                     this.hiringList = newList;
                 });
 
-                this.socket.on('order_update', (data) => {
+                this.socket.on('order_update', (data) => {
     if (!this.user.id) return;
     
     // 处理订单数据更新
@@ -2721,19 +2734,19 @@ document.addEventListener("DOMContentLoaded", function() {
             },
 
            setView(v) {
-                if (this.view === 'hire_chat' && v !== 'hire_chat') {
-                    this.chatMessages = [];
-                }
-                if (v === 'products') {
-                    this.view = 'home';
-                    this.filterCat = 'all';
-                    this.filterSubCat = 'all';
-                } else {
-                    this.view = v;
-                    if (v === 'home') { this.filterCat = 'all'; this.filterSubCat = 'all'; }
-                }
-                this.mobileMenuOpen = false;
-            },
+                if (this.view === 'hire_chat' && v !== 'hire_chat') {
+                    this.chatMessages = [];
+                }
+                if (v === 'products') {
+                    this.view = 'home';
+                    this.filterCat = 'all';
+                    this.filterSubCat = 'all';
+                } else {
+                    this.view = v;
+                    if (v === 'home') { this.filterCat = 'all'; this.filterSubCat = 'all'; }
+                }
+                this.mobileMenuOpen = false;
+            },
 
             checkLoginAndGo(target) {
                 if (!this.user.id) { this.openAuth('login'); return; }
@@ -2958,7 +2971,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     return;
                 }
                 if (this.authModal.mode === 'register') {
-                    if (this.authForm.password.length < 6) { Swal.fire('验证提示', '密码长度至少为6位', 'warning'); return; }
+                    if (this.authForm.password.length < 8) { Swal.fire('验证提示', '密码长度至少为8位', 'warning'); return; }
                     if (this.authForm.password !== this.authForm.confirmPassword) { Swal.fire('验证提示', '两次输入的密码不一致', 'warning'); return; }
                 }
                 if (this.authForm.inviteCode) this.authForm.inviteCode = this.authForm.inviteCode.toUpperCase();
@@ -2979,7 +2992,8 @@ document.addEventListener("DOMContentLoaded", function() {
                             contact:    this.authForm.contact,
                             uid:        res.data.uid || uid,
                             balance:    res.data.balance || 0,
-                            inviteCode: res.data.inviteCode
+                            inviteCode: res.data.inviteCode,
+                            token:      res.data.token
                         };
                         localStorage.setItem('nexus_user', JSON.stringify(this.user));
                         this.authModal.open = false;
@@ -3276,10 +3290,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
 
 if (order.qrcode_url) {
-                    const isCashier = order.qrcode_url.includes('cashier');
-                    let payMethodText = '请使用扫码支付';
-                    if (order.payment_method === 'WeChat') payMethodText = '请使用微信扫码支付';
-                    else if (order.payment_method === 'Alipay') payMethodText = '请使用支付宝扫码支付';
+                     const isCashier = order.qrcode_url.includes('cashier');
+                     let payMethodText = '请使用扫码支付';
+                    if (String(order.payment_method || '').toLowerCase() === 'alipay') payMethodText = '请使用支付宝完成支付';
                     let timerInterval;
                     Swal.fire({
                         title: isCashier ? '订单支付' : '已上传收款码',
@@ -3298,9 +3311,10 @@ if (order.qrcode_url) {
                                 </div>
                                 <p class="mb-2 text-xs text-slate-500">订单号: ${order.order_id}</p>
                                 <p class="text-red-500 font-bold mb-4">请在 <b id="qr-timer">--:--</b> 内完成支付</p>
-                                ${isCashier ? `
-                                    <button id="go-pay-btn" type="button" class="btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 w-full mb-4">点击去支付</button>
-                                ` : `
+                                 ${isCashier ? `
+                                     <button id="go-pay-btn" type="button" class="btn-gradient text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-50 px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 w-full mb-4">点击去支付</button>
+                                     <p class="text-xs text-emerald-600 font-bold">支付成功后系统自动回调并更新为已支付，无需上传凭证或等待管理员确认。</p>
+                                 ` : `
                                     <img src="${order.qrcode_url}" style="max-width:200px; margin:0 auto; border:1px solid #eee; border-radius:8px; padding:5px;">
                                     <p class="mt-3 text-sm text-slate-500">${payMethodText}</p>
                                 `}
@@ -3308,10 +3322,10 @@ if (order.qrcode_url) {
                             </div>
                         `,
                         icon: 'info',
-                        confirmButtonText: '我已支付，去上传凭证',
+                        confirmButtonText: isCashier ? '关闭，等待系统自动到账' : '我已支付，去上传凭证',
                         showCancelButton: true,
                         cancelButtonText: '稍后支付',
-                        showDenyButton: true,
+                        showDenyButton: !isCashier,
                         denyButtonText: '二维码无法识别',
                         confirmButtonColor: '#3b82f6',
                         allowOutsideClick: false,
@@ -3336,7 +3350,7 @@ if (order.qrcode_url) {
                         },
                         willClose: () => { clearInterval(timerInterval); }
                     }).then((result) => {
-                        if (result.isConfirmed) this.confirmPayment(order.order_id);
+                        if (result.isConfirmed && !isCashier) this.confirmPayment(order.order_id);
                         else if (result.isDenied) this.reportQrIssue(order.order_id);
                     });
                 } else {
@@ -3383,7 +3397,7 @@ if (order.qrcode_url) {
                 if (!this.rechargeForm.amount || this.rechargeForm.amount <= 0) return Swal.fire('提示', '请输入正确的充值金额', 'warning');
                 this.rechargeSubmitting = true;
                 try {
-                    const methodMap = { 'USDT': 'USDT', 'WeChat': 'wxpay', 'Alipay': 'alipay' };
+                    const methodMap = { 'USDT': 'USDT', 'Alipay': 'alipay' };
 const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id, amount: this.rechargeForm.amount, method: methodMap[this.rechargeForm.method] || this.rechargeForm.method, source: window.location.hostname });
                     if (res.data.success) {
                         this.rechargeModal.open = false;
@@ -3417,7 +3431,7 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
                 if ((this.user.balance || 0) < 1) return Swal.fire('提示', '余额不足1 USDT，无法提现', 'warning');
                 history.pushState({ modal: 'withdraw' }, null, '');
                 this.withdrawModal.open = true;
-                this.withdrawForm = { amount: Math.min(this.user.balance || 0, 10), address: '' };
+                this.withdrawForm = { amount: Math.min(this.user.balance || 0, 10), address: '', method: 'USDT', file: null, preview: '', confirmAddr: false };
             },
 
             handleWithdrawFile(event) {
@@ -3525,7 +3539,7 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
             async changePassword() {
                 if (!this.securityForm.oldPassword) return Swal.fire('提示', '请输入旧密码', 'warning');
                 if (!this.securityForm.newPassword) return Swal.fire('提示', '请输入新密码', 'warning');
-                if (this.securityForm.newPassword.length < 6) return Swal.fire('提示', '新密码长度至少6位', 'warning');
+                if (this.securityForm.newPassword.length < 8) return Swal.fire('提示', '新密码长度至少8位', 'warning');
                 if (this.securityForm.newPassword !== this.securityForm.confirmPassword) return Swal.fire('提示', '两次输入的新密码不一致', 'warning');
                 try {
                     const res = await axios.post(`${API_BASE}/api/user/change-password`, { userId: this.user.id, oldPassword: this.securityForm.oldPassword, newPassword: this.securityForm.newPassword });
@@ -3760,11 +3774,11 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
             },
 
            openWalletAction(type) {
-                if (type === 'recharge') this.openRechargeModal();
-                else this.openWithdrawModal();
-            },
+                if (type === 'recharge') this.openRechargeModal();
+                else this.openWithdrawModal();
+            },
 
- 
+ 
         }
     });
 
@@ -3772,5 +3786,6 @@ const res = await axios.post(`${API_BASE}/api/recharge`, { userId: this.user.id,
     app.mount('#app');
 });
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"d58986ef6e0a4299adeeddb2eb80320d","r":1,"spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
