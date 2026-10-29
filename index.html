@@ -1760,6 +1760,11 @@ document.addEventListener("DOMContentLoaded", function() {
             return defaultVal;
         }
     };
+    const initialSavedUser = safeJSONParse(localStorage.getItem('nexus_user'), {});
+    // 旧版缓存只有用户 ID、没有新版签名 Token，不应继续当作已登录状态。
+    if (initialSavedUser.id && !initialSavedUser.token) {
+        localStorage.removeItem('nexus_user');
+    }
 
     // 所有用户私有接口自动携带服务端签发的会话 Token。
     axios.interceptors.request.use(config => {
@@ -1771,19 +1776,28 @@ document.addEventListener("DOMContentLoaded", function() {
         return config;
     });
 
-    // 全局拦截器处理 401 Token 过期
+    let authExpiryHandling = false;
+    function handleExpiredUserSession() {
+        if (authExpiryHandling) return;
+        authExpiryHandling = true;
+        localStorage.removeItem('nexus_user');
+        Swal.fire({
+            title: '登录已过期',
+            text: '请重新登录',
+            icon: 'warning',
+            confirmButtonText: '去登录',
+            allowOutsideClick: false
+        }).then(() => {
+            window.location.replace(window.location.origin + window.location.pathname);
+        });
+    }
+    // 只有本次请求确实携带了用户 Token，才把 401 视为“登录过期”。
+    // 避免游客请求或登录密码错误时触发循环弹窗/刷新。
     axios.interceptors.response.use(response => response, error => {
-        if (error.response && error.response.status === 401) {
-            localStorage.removeItem('nexus_user');
-            localStorage.removeItem('adminToken');
-            Swal.fire({
-                title: '登录已过期',
-                text: '请重新登录',
-                icon: 'warning',
-                confirmButtonText: '去登录'
-            }).then(() => {
-                window.location.reload();
-            });
+        const authHeader = error.config?.headers?.Authorization || error.config?.headers?.authorization || '';
+        const isAuthenticatedRequest = String(authHeader).startsWith('Bearer ');
+        if (error.response?.status === 401 && isAuthenticatedRequest && !authExpiryHandling) {
+            handleExpiredUserSession();
         }
         return Promise.reject(error);
     });
@@ -2327,12 +2341,18 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
 
                 this.socket.on('connect', () => {
-                    const sid_cs = this.user.id ? `user_${this.user.id}`    : this.chatSessionId;
-                    const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
-                    this.socket.emit('join_room', sid_cs);
-                    this.socket.emit('join_room', sid_hr);
-                    this.pollChat();
+                    if (this.user.id && this.user.token) {
+                        this.socket.emit('join_room', `user_${this.user.id}`);
+                        this.socket.emit('join_room', `hr_user_${this.user.id}`);
+                        this.pollChat();
+                    }
                     this.initData();
+                });
+                this.socket.on('connect_error', (error) => {
+                    if (this.user.token && /unauthorized/i.test(String(error?.message || ''))) {
+                        this.socket.disconnect();
+                        handleExpiredUserSession();
+                    }
                 });
 
               this.socket.on('product_added', (newProduct) => {
@@ -2852,7 +2872,7 @@ document.addEventListener("DOMContentLoaded", function() {
             },
 
            async pollChat() {
-                if (!this.user.id && !this.chatSessionId) return { csCount: 0, hrCount: 0 };
+                if (!this.user.id || !this.user.token) return { csCount: 0, hrCount: 0 };
                 try {
                     const sid_cs = this.user.id ? `user_${this.user.id}` : this.chatSessionId;
                     const sid_hr = this.user.id ? `hr_user_${this.user.id}` : `hr_${this.chatSessionId}`;
